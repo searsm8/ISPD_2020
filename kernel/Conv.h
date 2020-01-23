@@ -10,76 +10,54 @@
 class Conv : public Kernel
 {
 public:
-	//Formal Parameters, immutable
-	int H, W, R, S, C, K, T;
-
-	//Executable Parameters.
-	//Modifying these can lead to varied kernel performance
-	int h_, w_, c_, k_;
-
 	//constructors
 	//
-	
-	Conv(const int& H,const int& W,const int& R,const int&S, const int& C, const int& K, const int& T )
+	Conv()
+	{}
+
+	Conv(int H, int W, int R, int S, int C, int K, int T)
 	{
-		this->H = H;
-		this->W = W;
-		this->R = R;
-		this->S = S;
-		this->C = C;
-		this->K = K;
-		this->T = T;
-		this->h_ = 0;
-		this->w_ = 0;
-		this->c_ = 0;
-		this->k_ = 0;
+		//initialize all Formal Parameters
+		FP.insert(pair<string, int>("H", H));
+		FP.insert(pair<string, int>("W", W));
+		FP.insert(pair<string, int>("R", R));
+		FP.insert(pair<string, int>("S", S));
+		FP.insert(pair<string, int>("C", C));
+		FP.insert(pair<string, int>("K", K));
+		FP.insert(pair<string, int>("T", T));
+
+		//initialize all Execution parameters
+		EP.insert(pair<string, int>("h", 1));
+		EP.insert(pair<string, int>("w", 1));
+		EP.insert(pair<string, int>("c", 1));
+		EP.insert(pair<string, int>("k", 1));
 	}
 
-
-	void printParams()
+	int computeHeight()
 	{
-		cout << "\nFormal Parameters:\n";
-		cout << "H=" << H << ", ";
-		cout << "W=" << W << ", ";
-		cout << "R=" << R << ", ";
-		cout << "S=" << S << ", ";
-		cout << "C=" << C << ", ";
-		cout << "K=" << K << ", ";
-		cout << "T=" << T ;
-		
-		cout << "\nExecution Parameters:\n";
-		cout << "h_=" << h_ << ", ";
-		cout << "w_=" << w_ << ", ";
-		cout << "c_=" << c_ << ", ";
-		cout << "k_=" << k_ << "\n";
+		height = EP["h"] * EP["w"] * (EP["k"]+1);	
+		cout << "HEIGHT: " << height;
+		return height;
 	}
 
-	void printPerformance()
+	int computeWidth()
 	{
-		cout << "Height: " << getHeight() << endl;
-		cout << "Width: " << getWidth() << endl;
-		cout << "Time: " << getTime() << endl;
-		cout << "Memory: " << getMemory() << endl;
+		width = 3 * EP["c"];
+		return width;
 	}
 
-	int getHeight()
+	int computeTime()
 	{
-		return 5;
+		time = ceil(FP["H"]/EP["h"]) * ceil(FP["W"]/EP["w"]) * ceil(FP["C"]/EP["c"]) * ceil(FP["K"]/EP["k"]) * FP["R"] * FP["S"] / FP["T"] / FP["T"];
+
+		return time;
 	}
 
-	int getWidth()
+	int computeMemory()
 	{
-		return 8;
-	}
-
-	int getTime()
-	{
-		return 5;
-	}
-
-	int getMemory()
-	{
-		return 5;
+		memory = FP["C"]/EP["c"] * FP["K"]/EP["k"] * FP["R"] * FP["S"] +
+			(FP["W"]+FP["S"]-1)/EP["w"] * (FP["H"]+FP["R"]-1)/EP["h"] * FP["K"]/EP["k"];
+		return memory;
 	}
 };
 #endif

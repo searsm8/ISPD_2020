@@ -9,6 +9,9 @@
 #define _Kernel
 
 #include <iostream>
+#include <map>
+#include <string>
+#include <cmath>
 
 using namespace std;
 
@@ -16,63 +19,57 @@ using namespace std;
 class Kernel
 {
 private:
-	int x, y, rotation;
 public:
+	int x, y, rotation, ID;
+	static int kernel_count;
+
+	map<string, int> FP; //Formal parameters. Immutable.
+	map<string, int> EP; //Execution parameters
+
+	int height, width, time, memory;
+
 	//constructors
 	Kernel()
 	{
 		x = 0;
 		y = 0;
 		rotation = 0;
+		ID = kernel_count++;
 	}
 
-	Kernel(const int& x, const int& y)
+	void printParameters()
 	{
-		this->x = x;
-		this->y = y;
-		this->rotation = 0;
-	}
-
-	Kernel(const int& x, const int& y, const int& rot)
-	{
-		this->x = x;
-		this->y = y;
-		this->rotation = rot;
-	}
-
-	void printParams()
-	{
-		cout << "x: " << x << endl;
-		cout << "y: " << y << endl;
-		cout << "rot: " << rotation << endl;
+		cout << "\nKernel " << ID << " at (" << x << ", " << y << ", R" << rotation << ")\n";
+	
+		cout << "Formal Parameters: ";
+		map<string, int>::iterator itr;
+		for(itr = FP.begin(); itr != FP.end(); ++itr)
+			cout << itr->first << "=" << itr->second << " ";
+		
+		cout << "\nExecution Parameters: ";
+		for(itr = EP.begin(); itr != EP.end(); ++itr)
+			cout << itr->first << "=" << itr->second <<  " ";
+			
+		cout << endl << endl;	
 	}	
 
 	void printPerformance()
 	{
-		cout << "Height: " << this->getHeight() << endl;
-		cout << "Width: " << getWidth() << endl;
-		cout << "Time: " << getTime() << endl;
-		cout << "Memory: " << getMemory() << endl;
+		cout << "Performance metrics for kernel " << ID << ":\n";
+		cout << "Height: " << height << endl;
+		cout << "Width: "  << width  << endl;
+		cout << "Time: "   << time   << endl;
+		cout << "Memory: " << memory << endl;
 	}
 
-	int getHeight()
-	{
-		return -1;
-	}
+	int computeHeight() { return -1; }
 
-	int getWidth()
-	{
-		return -1;
-	}
+	int computeWidth() { return -1; }
 
-	int getTime()
-	{
-		return -1;
-	}
+	int computeTime() { return -1; }
 
-	int getMemory()
-	{
-		return -1;
-	}
+	int computeMemory() { return -1; }
+	
 };
+int Kernel::kernel_count = 0;
 #endif
