@@ -35,8 +35,7 @@ public:
 
 	int computeHeight()
 	{
-		height = EP["h"] * EP["w"] * (EP["k"]+1);	
-		cout << "HEIGHT: " << height;
+		height = EP["h"] * EP["w"] * (EP["k"]+1);
 		return height;
 	}
 
