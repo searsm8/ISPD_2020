@@ -12,6 +12,8 @@
 #include <map>
 #include <string>
 #include <cmath>
+#include <vector>
+//#include <gdb>
 
 using namespace std;
 
@@ -69,7 +71,47 @@ public:
 	int computeTime() { return -1; }
 
 	int computeMemory() { return -1; }
+
+	//function to update all performance metrics
+	virtual void computePerformance()
+	{
+		cout << "Kernel.h computePerformance()\n";
+		this->computeHeight();
+		this->computeWidth();
+		this->computeTime();
+		this->computeMemory();
+	}
+
+	string getType() { return "Kernel"; }
+
+	int getX() { return x; }
+
+	int getY() { return y; }
+
+//MODIFIERS
+	void setX(int new_X) { x = new_X; }
+
+	void setY(int new_Y) { y = new_Y; }
+
+	virtual void update() { };
+
+	virtual void setEP(string key, int val)
+	{
+		cout << "\n****CALLED setEP() from Kernel class****\n";
+	}
+
+	//gives an array of ints to help graphically represent the kernel
+	//each row in the returned array is one rectangle
+	//of the format: [x, y, width, height]
+	virtual vector<vector<int>> getRectangles()
+	{
+		cout << "Get Rects Kernel\n";
+		vector<vector<int>> rects;
+		return rects;
+	}
 	
 };
+
 int Kernel::kernel_count = 0;
+
 #endif

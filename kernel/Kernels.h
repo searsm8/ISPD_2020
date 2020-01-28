@@ -1,5 +1,5 @@
 //Kernels.h
-//includes all the other header files to for ease of use
+//includes all the other kernel header files to for ease of use
 
 
 #include "Kernel.h"

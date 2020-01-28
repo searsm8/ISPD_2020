@@ -1,6 +1,8 @@
+all:
+	g++ Kernel.h -std=c++11
+	g++ Conv.h -std=c++11
+	g++ Dblock.h -std=c++11
+	g++ Cblock.h -std=c++11
 
-
-
-g++ Kernel.h
-g++ Conv.h
-g++ test_kernels.cpp
+clean:
+	rm a.out Kernel.h.gch Conv.h.gch Dblock.h.gch Cblock.h.gch
