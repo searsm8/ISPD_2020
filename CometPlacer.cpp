@@ -82,7 +82,7 @@ int main(int argc, char** argv)
 	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual();
 
-	placer.increase_EP("c", 4);
+	placer.increase_EP("c2", 34);
 	cout << "avg_time: " << placer.computeAvgTime() << endl;
 	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual();

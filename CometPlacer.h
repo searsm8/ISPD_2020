@@ -6,10 +6,17 @@
 #ifndef _CometPlacer
 #define _CometPlacer
 
+//if VISUALIZE is defined, then the SDL library
+//will be used to create a visualization
+//if SDL is not installed, comment this #define
+//#define VISUALIZE
+
+#ifdef VISUALIZE
+#include "visual/VisualizeWSE.h"
+#endif
+
 #include "util.h"
 #include "kernel/Kernels.h"
-#include "visual/VisualizeWSE.h"
-
 #include <iostream>
 #include <fstream>
 
@@ -29,7 +36,10 @@ private:
 	Kernel* head; //head of the chain of kernels
 	int iteration;
 	int avg_time;
+
+#ifdef VISUALIZE
 	SDL_Window* window;
+#endif
 
 public:
 
@@ -47,7 +57,9 @@ public:
 
 		iteration = 0;
 		avg_time = 0;
+#ifdef VISUALIZE
 		window = createWSE(width, height);
+#endif
 		
 		setInitialPlacement();
 		computeAvgTime();
@@ -202,6 +214,7 @@ public:
 	//visualize the kernels on the WSE
 	void updateVisual()
 	{
+#ifdef VISUALIZE
 		updateWSE(window, kernels, iteration);
 		//wait for any key to be pressed
 		SDL_Event event;
@@ -211,8 +224,8 @@ public:
 				break;
 				
 		}
-		//SDL_Delay(VISUAL_UPDATE_INTERVAL);	
-			
+#endif
+		return;
 	}
 
 

@@ -114,9 +114,9 @@ public:
 	{
 		string params = getName() + ": " + getType() + "( " +
 		to_string(FP["H"]) + " " + to_string(FP["W"]) + " " + to_string(FP["F"]) + " "; 
-	       	to_string(convs[0].EP["h"]) + " " + to_string(convs[0].EP["w"]) + " ";  
+	       	params += to_string(convs[0].EP["h"]) + " " + to_string(convs[0].EP["w"]) + " ";  
 		for(Conv c : convs)
-	       		params += to_string(c.EP["c"]) + " " + to_string(c.EP["k"]) + " "; 
+	       		params += "c:"+to_string(c.EP["c"]) + " k:" + to_string(c.EP["k"]) + " "; 
 		params += ")\n";
 
 		return params;
