@@ -41,15 +41,50 @@ int main(int argc, char** argv)
 
 	CometPlacer placer = CometPlacer(kgraph, output, wirepenalty, timelimit, width, height);
 
+	placer.printKernels();
 	placer.printInfo();
+	cout << "avg_time: " << placer.computeAvgTime() << endl;
+	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual();
-	placer.modifyKernel(0, "h", 2);
+
+	placer.equalizeKernelTimes();
+	cout << "avg_time: " << placer.computeAvgTime() << endl;
+	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual();
-	placer.modifyKernel(0, "k1", 32);
+
+	placer.increase_EP("c", 2);
+	cout << "avg_time: " << placer.computeAvgTime() << endl;
+	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual();
-	placer.modifyKernel(0, "k2", 32);
+
+	placer.increase_EP("w", 2);
+	cout << "avg_time: " << placer.computeAvgTime() << endl;
+	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual();
-	placer.modifyKernel(0, "k3", 32);
+
+	placer.increase_EP("c", 4);
+	cout << "avg_time: " << placer.computeAvgTime() << endl;
+	cout << "max_time: " << placer.getMaxTime() << endl;
+	placer.updateVisual();
+
+	placer.increase_EP("w", 4);
+	cout << "avg_time: " << placer.computeAvgTime() << endl;
+	cout << "max_time: " << placer.getMaxTime() << endl;
+	placer.updateVisual();
+
+	placer.increase_EP("c", 4);
+	cout << "avg_time: " << placer.computeAvgTime() << endl;
+	cout << "max_time: " << placer.getMaxTime() << endl;
+	placer.updateVisual();
+
+	placer.increase_EP("c", 4);
+	cout << "avg_time: " << placer.computeAvgTime() << endl;
+	cout << "max_time: " << placer.getMaxTime() << endl;
+	placer.updateVisual();
+
+	placer.increase_EP("c", 4);
+	cout << "avg_time: " << placer.computeAvgTime() << endl;
+	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual();
 
 	return 1;

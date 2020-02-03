@@ -72,8 +72,19 @@ public:
 		return memory;
 	}
 
-	string getType() { return "Conv"; }
+	string getType() { return "conv"; }
 
+	string getParamString()
+	{
+		return  getName() + ": " + getType() + "( " +
+		to_string(FP["H"]) + " " + to_string(FP["W"]) + " " +
+		to_string(FP["F"]) + " " + to_string(FP["R"]) + " " +
+		to_string(FP["S"]) + " " + to_string(FP["C"]) + " " +
+		to_string(FP["K"]) + " " + to_string(FP["T"]) + " " +
+		to_string(EP["h"]) + " " + to_string(EP["w"]) + " " +
+		to_string(EP["c"]) + " " + to_string(EP["k"]) + " )\n";
+	}
+	
 	//function to update all performance metrics
 	void computePerformance()
 	{
@@ -91,6 +102,7 @@ public:
 	void setEP(string key, int val)
 	{
 		EP[key] = val;
+		computePerformance();
 	}
 
 	//gives an array of ints to help graphically represent the kernel

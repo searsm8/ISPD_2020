@@ -38,15 +38,17 @@ public:
 		FP.insert(pair<string, int>("F", F));	
 
 		//initialize Execution paramaters
-/*		EP.insert(pair<string, int>("h", 1));	
-		EP.insert(pair<string, int>("w", 1));	
-		EP.insert(pair<string, int>("c1", 1));	
-		EP.insert(pair<string, int>("k1", 1));	
-		EP.insert(pair<string, int>("c2", 1));	
-		EP.insert(pair<string, int>("k2", 1));	
-		EP.insert(pair<string, int>("c3", 1));	
-		EP.insert(pair<string, int>("k3", 1));	
-*/
+		EP.insert(pair<string, int>("h", h));	
+		EP.insert(pair<string, int>("w", w));	
+		EP.insert(pair<string, int>("c", c1));	
+		EP.insert(pair<string, int>("k", k1));	
+		EP.insert(pair<string, int>("c1", c1));	
+		EP.insert(pair<string, int>("k1", k1));	
+		EP.insert(pair<string, int>("c2", c2));	
+		EP.insert(pair<string, int>("k2", k2));	
+		EP.insert(pair<string, int>("c3", c3));	
+		EP.insert(pair<string, int>("k3", k3));	
+	
 		height = -1;
 		width = -1;
 		time = -1;
@@ -67,11 +69,13 @@ public:
 			int index = stoi(key.substr(1))-1;
 			convs[index].setEP(new_key, val);
 		}
+		EP[key] = val;
+		computePerformance();
 	}
 
 	int computeHeight()
 	{
-		height = max(max(convs[0].computeHeight(), convs[1].computeHeight()), convs[2].computeHeight());
+		height = max({convs[0].computeHeight(), convs[1].computeHeight(), convs[2].computeHeight()});
 		updateY();
 		return height;
 	}
@@ -104,7 +108,19 @@ public:
 		computeMemory();
 	}
 
-	string getType() { return "Dblock"; }
+	string getType() { return "dblock"; }
+
+	string getParamString()
+	{
+		string params = getName() + ": " + getType() + "( " +
+		to_string(FP["H"]) + " " + to_string(FP["W"]) + " " + to_string(FP["F"]) + " "; 
+	       	to_string(convs[0].EP["h"]) + " " + to_string(convs[0].EP["w"]) + " ";  
+		for(Conv c : convs)
+	       		params += to_string(c.EP["c"]) + " " + to_string(c.EP["k"]) + " "; 
+		params += ")\n";
+
+		return params;
+	}
 
 	//set the X coordinate for this Kernel
 	//update the X for all internel Conv blocks
