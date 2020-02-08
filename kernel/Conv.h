@@ -48,27 +48,27 @@ public:
 
 	int computeHeight()
 	{
-		height = EP["h"] * EP["w"] * (EP["k"]+1);
+		height = EP["h"] * EP["w"] * (EP["c"]+1);
 		return height;
 	}
 
 	int computeWidth()
 	{
-		width = 3 * EP["c"];
+		width = 3 * EP["k"];
 		return width;
 	}
 
 	int computeTime()
 	{
-		time = ceil(FP["H"]/EP["h"]) * ceil(FP["W"]/EP["w"]) * ceil(FP["C"]/EP["c"]) * ceil(FP["K"]/EP["k"]) * FP["R"] * FP["S"] / FP["T"] / FP["T"];
+		time = ceil(getFP("H")/getEP("h")) * ceil(getFP("W")/getEP("w")) * ceil(getFP("C")/getEP("c")) * ceil(getFP("K")/getEP("k")) * (getFP("R") * getFP("S") / getFP("T") / getFP("T"));
 
 		return time;
 	}
 
 	int computeMemory()
 	{
-		memory = FP["C"]/EP["c"] * FP["K"]/EP["k"] * FP["R"] * FP["S"] +
-			(FP["W"]+FP["S"]-1)/EP["w"] * (FP["H"]+FP["R"]-1)/EP["h"] * FP["K"]/EP["k"];
+		memory = (getFP("C")/getEP("c")) * (getFP("K")/getEP("k")) * getFP("R") * getFP("S") +
+			((getFP("W")+getFP("S")-1)/getEP("w")) * ((getFP("H")+getFP("R")-1)/getEP("h")) * (getFP("K")/getEP("k"));
 		return memory;
 	}
 
@@ -76,13 +76,13 @@ public:
 
 	string getParamString()
 	{
-		return  getName() + ": " + getType() + "( " +
-		to_string(FP["H"]) + " " + to_string(FP["W"]) + " " +
-		to_string(FP["F"]) + " " + to_string(FP["R"]) + " " +
-		to_string(FP["S"]) + " " + to_string(FP["C"]) + " " +
-		to_string(FP["K"]) + " " + to_string(FP["T"]) + " " +
-		to_string(EP["h"]) + " " + to_string(EP["w"]) + " " +
-		to_string(EP["c"]) + " " + to_string(EP["k"]) + " )\n";
+		return  getName() + ": " + getType() + "( H:" +
+		to_string(FP["H"]) + " W:" + to_string(FP["W"]) + " F:" +
+		to_string(FP["F"]) + " R:" + to_string(FP["R"]) + " S:" +
+		to_string(FP["S"]) + " C:" + to_string(FP["C"]) + " K:" +
+		to_string(FP["K"]) + " K:" + to_string(FP["T"]) + " h:" +
+		to_string(EP["h"]) + " w:" + to_string(EP["w"]) + " c:" +
+		to_string(EP["c"]) + " k:" + to_string(EP["k"]) + " )\n";
 	}
 	
 	//function to update all performance metrics
@@ -99,10 +99,14 @@ public:
 	
 	void setY(int new_Y) { y = new_Y; }
 
-	void setEP(string key, int val)
+	bool setEP(string key, int val)
 	{
+		if(EP[key] == val)
+			return false;
+
 		EP[key] = val;
-		computePerformance();
+		computePerformance(); //is this needed here?
+		return true;
 	}
 
 	//gives an array of ints to help graphically represent the kernel
@@ -113,6 +117,75 @@ public:
 		vector<vector<int>> rects;
 		rects.push_back(vector<int>{ x, y, width, height});
 		return rects;
+	}
+
+	//compute a net benefit index which for increasing an Execution Parameter
+	//to the next impactful value
+	//(not all EP increases are impactful due to the ceil() function)
+	//a "net benefit" of 1 means that increasing the height will yield
+	//a proportional decrease in time for this kernel
+	double computeNetBenefitOfIncreasing(string EP_key)
+	{
+		double my_FP = getAnalogousFP(EP_key);
+		
+		if(my_FP == 0)
+			return 0;
+
+		double orig_EP = getEP(EP_key);
+		if(orig_EP >= my_FP)
+			return 0;
+		
+		double orig_time_term = ceil(my_FP / orig_EP);
+
+		double new_EP = ceil(my_FP / (orig_time_term - 1));
+
+		double new_time_term = ceil(my_FP / new_EP);
+		
+		//account for (c+1) in height
+		if(EP_key == "c")
+		{
+			orig_EP++;
+			new_EP++;
+		}
+
+		double net_benefit = (orig_time_term/new_time_term) / (new_EP/orig_EP) ;
+		
+		return net_benefit;
+		
+	}
+
+
+	//find the next EP value that actually benefits the time performance
+	//of this kernel. 
+	//Not all EP value increases will benefit the time due to ceil()
+	bool increaseEPtoNextValue(string EP_key)
+	{
+		return setEP(EP_key, getNextEPValue(EP_key));
+	}
+
+	double getNextEPValue(string EP_key)
+	{
+		double my_FP = getAnalogousFP(EP_key);
+		
+		double orig_EP = getEP(EP_key);
+		
+		if(my_FP == 0)
+		{
+			cout << "INVALID EP_key in Conv.h getNextEPValue(): " << EP_key << endl;
+			return orig_EP;
+		}
+
+		if(orig_EP >= my_FP)
+		{
+			cout << "No increase possible for EP: " << EP_key << endl;
+			return orig_EP;
+		}
+		
+		double orig_time_term = ceil(my_FP / orig_EP);
+
+		double new_EP = ceil(my_FP / (orig_time_term - 1));
+
+		return new_EP;
 	}
 };
 #endif

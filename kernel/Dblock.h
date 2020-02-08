@@ -20,6 +20,7 @@ private:
 public:
 	//each Dblock holds 3 Convolutional Kernels
 	vector<Conv> convs;
+	string EP_to_increase; //denotes the next EP to increase for height
 
 	//constructors
 	Dblock()
@@ -53,16 +54,40 @@ public:
 		width = -1;
 		time = -1;
 		memory = -1;
-		
+		EP_to_increase = "c";
 	}
 	
 	//take in a new Execution Parameter
-	void setEP(string key, int val)
+	bool setEP(string key, int val)
 	{
 		//if single character like "h" or "w"
 		if(key.size() == 1)
-			for(int i = 0; i < convs.size(); i++)
-				convs[i].setEP(key, val);
+		{
+			switch(key[0])
+			{
+				case 'h':
+					for(int i = 0; i < convs.size(); i++)
+						convs[i].setEP(key, val);
+					break;
+
+				case 'w':
+					for(int i = 0; i < convs.size(); i++)
+						convs[i].setEP(key, val);
+					break;
+				
+				case 'c':
+					convs[0].setEP("c", val);
+					convs[1].setEP("c", floor((9/4)*val));
+					convs[2].setEP("c", val);
+					break;
+	
+				case 'k':
+					convs[0].setEP("k", val);
+					convs[1].setEP("k", val);
+					convs[2].setEP("k", val);
+					break;
+			}
+		}
 		else //multicharacter specifies a conv such as c1 or k3
 		{
 			string new_key = key.substr(0, 1);
@@ -71,7 +96,8 @@ public:
 		}
 		EP[key] = val;
 		computePerformance();
-	}
+		return true;
+	} 
 
 	int computeHeight()
 	{
@@ -112,9 +138,9 @@ public:
 
 	string getParamString()
 	{
-		string params = getName() + ": " + getType() + "( " +
-		to_string(FP["H"]) + " " + to_string(FP["W"]) + " " + to_string(FP["F"]) + " "; 
-	       	params += to_string(convs[0].EP["h"]) + " " + to_string(convs[0].EP["w"]) + " ";  
+		string params = getName() + ": " + getType() + "( H:" +
+		to_string(FP["H"]) + " W:" + to_string(FP["W"]) + " F:" + to_string(FP["F"]) + " "; 
+	       	params += "h:" + to_string(convs[0].EP["h"]) + " w:" + to_string(convs[0].EP["w"]) + " ";  
 		for(Conv c : convs)
 	       		params += "c:"+to_string(c.EP["c"]) + " k:" + to_string(c.EP["k"]) + " "; 
 		params += ")\n";
@@ -168,6 +194,126 @@ public:
 		rects.push_back(vector<int>{ convs[2].x, convs[2].y, convs[2].width, convs[2].height});
 		return rects;
 	}
+
+
+	//attempt to equalize the computation time for the internal Conv blocks
+	void equalizeTime()
+	{
+		//increase the c2 parameter until conv blocks are equal time
+		while(convs[1].time > convs[0].time)
+			increaseEP("c2", 1);
+	}
+
+//PRINT METHODS
+
+	void printPerformance()
+	{
+		Kernel::printPerformance();
+		for(int i = 0; i < convs.size(); i++)
+			convs[i].printPerformance();
+	}
+
+	double computeNetBenefitOfIncreasing(string EP_key)
+	{
+		double net_benefit = 0;
+		for(int i = 0; i < convs.size(); i++)
+		{
+			double next = convs[i].computeNetBenefitOfIncreasing(EP_key);
+			cout << "Net benefit to increase " << EP_key << " for " << convs[i].getName() << ": " << next << endl;
+			if(next > net_benefit)
+				net_benefit = next;
+		}
+		return net_benefit;
+	}
+
+       	bool increaseEPtoNextValue(string EP_key)
+	{
+		for(Kernel k : convs)
+		{
+			k.printParameters();
+			k.printPerformance();
+		}
+
+		bool change_made = false;
+
+		double min_EP = convs[0].getNextEPValue(EP_key);
+		double next_EP = min_EP;
+		for(int i = 1; i < convs.size(); i++)
+		{
+			next_EP = convs[i].getNextEPValue(EP_key);
+
+			if(next_EP < min_EP)
+				min_EP = next_EP;
+		}
+
+	cout << getName() << ": increaseEPtoNextValue("<<EP_key<<") to "<<next_EP<<endl;
+
+		for(int i = 0; i < convs.size(); i++)
+		{
+			if(convs[i].setEP(EP_key, min_EP))
+				change_made = true;
+		}
+
+		if(!change_made)
+		cout << "!!!!No changes made for setNextEP(" << EP_key << ") to " << min_EP <<  "\n";
+
+		return change_made;
+		
+	}
+
+	//returns the Conv that currently has the longest time
+	Kernel* getLongestConv()
+	{
+		Kernel* longest_conv = &convs[0];
+		double longest_time = longest_conv->getTime();
+		for(int i = 1; i < convs.size(); i++)
+		{
+			if(convs[i].getTime() > longest_time)
+			{
+				longest_conv = &convs[i];
+				longest_time = longest_conv->getTime();
+			}
+		} 
+		return longest_conv;	
+	}
+		
+	bool increaseWidth()
+	{
+		cout << "increaseWidth() of Dblock: " << getName() << endl;
+		Kernel* k = getLongestConv();
+		if(k->increaseEPtoNextValue("k"))
+			return true;
+		//if unable to increase width anymore, must increase height instead
+		//else return increaseHeight();
+		else return false;
+	}
+
+	bool increaseHeight()
+	{		
+		cout << "increaseHeight() of Dblock: " << getName() << endl;
+		cout << "EP_to_increase: " << EP_to_increase << endl;
+		Kernel* k = getLongestConv();
+
+		//increase the next EP	
+		bool success = increaseEPtoNextValue(EP_to_increase);
+
+		//change the EP to be increased
+		if(EP_to_increase == "c")
+		{
+			EP_to_increase = "h";
+		}
+		else if(EP_to_increase == "h")
+		{
+			EP_to_increase = "w";
+		}
+		else if(EP_to_increase == "w")
+		{
+			EP_to_increase = "c";
+		}
+
+		return success;
+	}
+
 
 };
 #endif

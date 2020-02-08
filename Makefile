@@ -7,3 +7,6 @@ clean:
 
 run:
 	./CometPlacer.out kgraph=benchmarks/kgraph.txt output=output wirepenalty=100 timelimit=60 width=633 height=633
+
+run_single:
+	./CometPlacer.out kgraph=benchmarks/single.txt output=output wirepenalty=100 timelimit=60 width=633 height=633

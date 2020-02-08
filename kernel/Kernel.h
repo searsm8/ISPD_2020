@@ -13,7 +13,7 @@
 #include <string>
 #include <cmath>
 #include <vector>
-//#include <gdb>
+#include <ctime>
 
 using namespace std;
 
@@ -26,6 +26,8 @@ public:
 
 	int x, y, rotation, ID;
 	int height, width, time, memory;
+	double targetAR; //target Aspect Ratio which the kernel will try to achieve
+		//Aspect Ratio defined as: height/width
 
 	string name;
 
@@ -42,6 +44,7 @@ public:
 		rotation = 0;
 		ID = kernel_count++;
 		name = "Kernel " + to_string(ID);
+		targetAR = 1;
 	}
 
 	void printParameters()
@@ -60,7 +63,7 @@ public:
 		cout << endl << endl;	
 	}	
 
-	void printPerformance()
+	virtual void printPerformance()
 	{
 		cout << "Performance metrics for kernel " << ID << ":\n";
 		cout << "Height: " << height << endl;
@@ -74,10 +77,7 @@ public:
 
 	string getName() { return name; }
 
-	virtual string getParamString()
-	{
-		return "Kernel.h getParamString()";
-	}
+	virtual string getParamString() { return "Kernel.h getParamString()"; }
 
 	int getID() { return ID; }
 
@@ -89,11 +89,22 @@ public:
 
 	int getHeight() { return height; }
 
+	int getArea() { return width*height; }
+
 	int getTime() { return time; }
 
 	int getMemory() { return memory; }
 
+	//return doubles so that division math is correct!
+	double getFP(string key) { return FP[key]; }
+
+	double getEP(string key) { return EP[key]; }
+
 	Kernel* getNextKernel() { return next_kernel; }
+
+	double getAR() { return (double)((double)height / (double)width); }
+
+	double getTargetAR() { return targetAR; }
 
 	//getRectangles gives an array of ints to help draw the kernel
 	//each row in the returned array is one rectangle
@@ -114,12 +125,54 @@ public:
 
 	void setName(string new_name) { name = new_name; }
 
-	virtual void setEP(string key, int val)
+	void setAR(double new_AR) { targetAR = new_AR; }
+
+	virtual bool setEP(string key, int val)
 	{
 		cout << "\n****CALLED setEP() from Kernel class****\n";
+		return false;
+	}
+	
+	void increaseEP(string key, int val=1)
+	{
+		setEP(key, EP[key]+val); 
 	}
 
-//COMPUTATORS	
+	virtual bool increaseEPtoNextValue(string EP_key)
+	{
+		return false;
+	}
+
+	//increase the size of the kernel based on the target AR
+	//returns true if an increase was made
+	virtual bool increaseSize()
+	{
+		//don't increase an EP beyond the FP!!! it gains no time because ceil()
+		if(getAR() < getTargetAR())
+		{
+			return increaseHeight();
+		}
+		else
+		{
+			return increaseWidth();
+		}
+		
+		return false; //no increase was made because already too big!
+	}
+
+	virtual bool increaseWidth()
+	{
+		cout << "CALLED increaseWidth() from Kernel class!" << endl;
+		return true;
+	}
+	
+	virtual bool increaseHeight()
+	{
+		cout << "CALLED increaseHeight() from Kernel class!" << endl;
+		return true;
+	}
+	
+//COMPUTATORS
 	int computeHeight() { return -1; }
 
 	int computeWidth() { return -1; }
@@ -150,6 +203,47 @@ public:
 		this->computeTime();
 		this->computeMemory();
 	}
+
+	virtual void equalizeTime()
+	{
+		return;
+	}
+
+	//returns true if this kernel is overlapping other Kernel k
+	bool isOverlapping(Kernel* k)
+	{
+		//if one kernel is to the left of the other
+		if(x + width < k->x || k->x + k->width < x)
+			return false;
+
+		//if one kernel is above the other
+		if(y + height < k->y || k->y + k->height < y)
+			return false;
+
+		return true;
+	}
+
+	//convert and EP string to uppercase, return the FP
+	double getAnalogousFP(string EP_key)
+	{
+		if(EP_key == "h")
+			return getFP("H");
+		if(EP_key == "w")
+			return getFP("W");
+		if(EP_key == "c")
+			return getFP("C");
+		if(EP_key == "k")
+			return getFP("K");
+	}
+
+	
+
+	virtual double computeNetBenefitOfIncreasing(string EP_key)
+	{
+		return -1;
+	}
+
+
 };
 
 int Kernel::kernel_count = 0;

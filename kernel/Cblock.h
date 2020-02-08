@@ -60,7 +60,7 @@ public:
 	}
 
 	//take in a new Execution Parameter
-	void setEP(string key, int val)
+	bool setEP(string key, int val)
 	{
 		//if single character like "h" or "w"
 		if(key.size() == 1)
@@ -74,6 +74,7 @@ public:
 		}
 		EP[key] = val;
 		computePerformance();
+		return true;
 	}
 
 	int computeHeight()

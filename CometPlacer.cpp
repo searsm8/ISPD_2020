@@ -10,6 +10,7 @@
 int main(int argc, char** argv)
 {
 	cout << "****CometPlacer for WSE****\n\n";
+	srand(time(0)); //set random seed
 	
 	string kgraph;
 	string output;
@@ -18,6 +19,7 @@ int main(int argc, char** argv)
 	int width;
 	int height;
 
+	//read the runtime arguments
 	for(int i = 1; i < argc; i++)
 	{
 		vector<string> input = split(argv[i], "=");
@@ -41,51 +43,29 @@ int main(int argc, char** argv)
 
 	CometPlacer placer = CometPlacer(kgraph, output, wirepenalty, timelimit, width, height);
 
+
+	placer.updateVisual();
+	placer.printTimeAndArea();
 	placer.printKernels();
-	placer.printInfo();
+
+	//placer.printKernels();
+	//placer.printInfo();
 	cout << "avg_time: " << placer.computeAvgTime() << endl;
 	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual();
 
-	placer.equalizeKernelTimes();
+//	placer.equalizeKernelTimes();
 	cout << "avg_time: " << placer.computeAvgTime() << endl;
 	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual();
-
-	placer.increase_EP("c", 2);
+	placer.updateVisual(); 
+	
+	placer.maximizeKernelSize(0.8);
+	placer.enforceMemoryConstraint();
+	//placer.printKernels();
+	placer.achievePreciseAR(0.01);
 	cout << "avg_time: " << placer.computeAvgTime() << endl;
 	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual();
-
-	placer.increase_EP("w", 2);
-	cout << "avg_time: " << placer.computeAvgTime() << endl;
-	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual();
-
-	placer.increase_EP("c", 4);
-	cout << "avg_time: " << placer.computeAvgTime() << endl;
-	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual();
-
-	placer.increase_EP("w", 4);
-	cout << "avg_time: " << placer.computeAvgTime() << endl;
-	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual();
-
-	placer.increase_EP("c", 4);
-	cout << "avg_time: " << placer.computeAvgTime() << endl;
-	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual();
-
-	placer.increase_EP("c", 4);
-	cout << "avg_time: " << placer.computeAvgTime() << endl;
-	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual();
-
-	placer.increase_EP("c2", 34);
-	cout << "avg_time: " << placer.computeAvgTime() << endl;
-	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual();
-
+	placer.updateVisual(); 
+	placer.printARs();
 	return 1;
 }

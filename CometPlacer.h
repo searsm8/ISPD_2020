@@ -9,7 +9,7 @@
 //if VISUALIZE is defined, then the SDL library
 //will be used to create a visualization
 //if SDL is not installed, comment this #define
-//#define VISUALIZE
+#define VISUALIZE
 
 #ifdef VISUALIZE
 #include "visual/VisualizeWSE.h"
@@ -19,23 +19,26 @@
 #include "kernel/Kernels.h"
 #include <iostream>
 #include <fstream>
+#include <random>
 
 
 class CometPlacer
 {
 private:
-	int VISUAL_UPDATE_INTERVAL = 10000;
-	int MAX_ALLOWED_MEMORY = 48000;
-	string output;
-	int wirepenalty;
-	int timelimit;
+	int VISUAL_UPDATE_INTERVAL = 10000; //how often the visualization gets updated
+	int MAX_ALLOWED_MEMORY = 48000; //for a single core on the WSE
+	int wirepenalty; //how much to weight the wirelength
+	int timelimit; //runtime limit for program execution
 	int width;
 	int height;
 
 	vector<Kernel*> kernels;
 	Kernel* head; //head of the chain of kernels
 	int iteration;
-	int avg_time;
+	long avg_time;
+
+	vector<char> slicing; //dictates the kernel layout with a series of slicing steps
+	string output;
 
 #ifdef VISUALIZE
 	SDL_Window* window;
@@ -60,7 +63,29 @@ public:
 #ifdef VISUALIZE
 		window = createWSE(width, height);
 #endif
+
+		//create a normal distribution for Aspect Ratios
+		random_device rd{};
+		mt19937 gen{rd()};
 		
+		double mean = 1.5, std_dev = .3;
+		normal_distribution<double> d{mean, std_dev};
+
+		for(int i = 0; i < kernels.size(); i++)
+		{
+			double new_AR = d(gen);
+
+			if(new_AR < 0) new_AR = 1;
+
+			if(rand()%2 == 0)
+				new_AR = 1 / new_AR;
+
+		//	new_AR=1;
+
+			kernels[i]->setAR(new_AR);
+			cout << kernels[i]->getName() << " AR: " << new_AR << endl;
+		}
+
 		setInitialPlacement();
 		computeAvgTime();
 	}
@@ -91,7 +116,7 @@ public:
 					W = stoi(next_FP[1]);
 			}
 
-		int i = 2;
+		int i = 1;
 		if(elements[0].find("dblock") != -1)
 		{
 			Dblock* new_kernel = new Dblock(H, W, F, i,i,i,i,i,i,i,i);
@@ -185,6 +210,19 @@ public:
 
 	}
 	
+//PRINT METHODS
+	
+	//print all the kernel's target AR and actual AR
+	void printARs()
+	{
+		cout << endl;
+
+		for(Kernel* k : kernels)
+		{
+			cout << k->getName() << " targetAR: " << k->getTargetAR() << " actual AR: " << k->getAR() << endl;
+		}
+	}
+
 	//print general info about the WSE layout
 	void printInfo()
 	{
@@ -194,9 +232,9 @@ public:
 		cout << "Iteration: " << iteration << endl; 
 		cout << "wirepenalty: " << wirepenalty << endl; 
 		cout << "timelimit: " << timelimit << endl; 
-		cout << "Total Wire Penalty: " << computeL1Penalty() << endl;
 		cout << "Head Kernel: " << head->getName() << endl;
-		cout << "avg_time: " << avg_time << endl;
+		cout << "Total Wire Penalty: " << computeL1Penalty() << endl;
+		cout << "Max Time: " << getMaxTime() << endl;
 		cout << endl;
 	}
 
@@ -210,6 +248,15 @@ public:
 			k->printPerformance();
 		}
 	}
+
+	void printTimeAndArea()
+	{
+		for(Kernel* k : kernels)
+		{
+			cout << k->getName() << " (Time: " << k->getTime() << " (Area: " << k->getArea() << endl;;	
+		}
+	}
+
 
 	//visualize the kernels on the WSE
 	void updateVisual()
@@ -242,6 +289,18 @@ public:
 		return dist*wirepenalty;
 	}
 
+//ACCESSORS
+	int getTotalKernelArea()
+	{
+		int total_area = 0;
+
+		for(Kernel* k : kernels)
+			total_area += k->getArea();
+
+		return total_area;
+	}
+
+	int getWaferArea() { return width*height; }
 
 
 	//returns true if all kernels use a legal amount of memory
@@ -249,13 +308,36 @@ public:
 	bool checkMemoryLegality()
 	{
 
+		return true;
 	}
 
 
 	//returns true if all Kernels placement is legal
 	bool checkPlacementLegality()
 	{
+		bool legalPlacement = true;
+		//check for any kernel overlapping any other
+		for(int i = 0; i < kernels.size(); i++)
+		{
+			for(int j = i+1; j < kernels.size(); j++)
+			{
+				if(kernels[i]->isOverlapping(kernels[j]))
+				{
+					cout << kernels[i]->getName() << " is overlapping with " << kernels[j]->getName() << endl;
+					legalPlacement = false;
+				}
+			}
+		}
 
+
+
+		//check for kernels outside boundary
+		
+		
+		if(legalPlacement)
+			cout << "No overlapping kernels! Legal Placement!\n";
+		else cout << "Overlapping kernels. Illegal Placement.\n";
+		return legalPlacement;
 	}
 
 	//give each kernel an intial placement
@@ -290,17 +372,19 @@ public:
 
 	}
 
+	long long computeTotalTime()
+	{
+		long long sum = 0;
+		for(Kernel* k : kernels)
+			sum += k->getTime();
+		
+		return sum;
+	}
+
 	int computeAvgTime()
 	{
-		int sum = 0;
-		//compute the avg_time
-		for(Kernel* k : kernels)
-		{
-			sum += k->getTime();
-		}		
-		avg_time = sum/kernels.size();
-
-		return avg_time;
+		avg_time = computeTotalTime()/kernels.size();
+		return avg_time; 
 	}
 
 	int getMaxTime()
@@ -318,36 +402,31 @@ public:
 		return max_time;
 	}
 
-	//try to make each kernel have the same time
-	void equalizeKernelTimes()
+	//return pointer to the kernel with the longest execution time
+	Kernel* getLongestKernel()
 	{
-		cout << "\nequalizeKernelTimes()"<<endl;
-		bool equalized = false;
+		Kernel* k = kernels[0];
+		int longest_time = k->getTime();
 
-		while(!equalized)
+		for(int i = 1; i < kernels.size(); i++)
 		{
-			bool kernels_modified = false;
-			for(int i = 0; i < kernels.size(); i++)
+			if(kernels[i]->getTime() > longest_time)
 			{
-				if(kernels[i]->getTime() > avg_time*1.05)
-				{
-					kernels[i]->setEP("h",  kernels[i]->EP["h"]+1);
-					kernels_modified = true;
-					computeAvgTime(); //update the avg time
-				}
+				k = kernels[i];
+				longest_time = kernels[i]->getTime();
 			}
-
-			if(!kernels_modified)
-				equalized = true;
 		}
+
+		return k;
 	}
 
-	void increase_EP(string key, int increment=1)
+	void increaseAllEP(string key, int increment=1)
 	{
-		cout << "\nincrease_EP("<< key << ", " << increment << ")\n";
+		cout << "\nincreaseAllEP("<< key << ", " << increment << ")\n";
 		for(int i = 0; i < kernels.size(); i++)
 		{
-			kernels[i]->setEP(key, kernels[i]->EP[key]+increment);
+//			cout << "AR of " << kernels[i]->getName() << ": " << kernels[i]->getAR() << endl;
+			kernels[i]->increaseEP(key, increment);
 		}
 	}
 
@@ -357,10 +436,181 @@ public:
 		Kernel* k = kernels[kernel_num];
 		cout << endl;
 		cout<<"modifyKernel("<<kernel_num<<", "<<key<<", "<<new_val<<")" <<endl;
-		k->setEP(key, new_val);
+		double d = k->computeNetBenefitOfIncreasing(key); 
+		cout << "Net benefit of increasing " << key << ": " << d << endl;
+
+		k->increaseEPtoNextValue(key);
 		k->computePerformance();
 		k->printPerformance();
 		cout << endl;
+	}
+
+	//returns true if any single kernel exceeds the height or width 
+	//of the wafer
+	bool kernelExceedsWaferSize()
+	{
+		for(int i = 0; i < kernels.size(); i++)
+		{
+			if(kernels[i]->getWidth() > width)
+			{
+				cout << kernels[i]->getName() << " eXceeds wafer width!\n";
+				return true;
+			}
+			if(kernels[i]->getHeight() > height)
+			{
+				cout << kernels[i]->getName() << " exceeds wafer height!\n";
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	//try to make each kernel have the same time
+	//find the kernel with highest time and reduce the time
+	//repeat until max time is with allowed_percent_difference 
+	//of the avg time
+	void equalizeKernelTimes(double allowed_percent_difference = 0.1)
+	{
+		cout << "\nequalizeKernelTimes()"<<endl;
+
+		//equalize the time within each kernel
+		for(int i = 0; i < kernels.size(); i++)
+			kernels[i]->equalizeTime();
+
+		//count prevents equalize from increasing forever
+		int count = 0, COUNT_MAX = 10*kernels.size();
+
+		while(count < COUNT_MAX)
+		{
+			Kernel* k = getLongestKernel();	
+			if(k->getTime() < (double)avg_time*(1.0+allowed_percent_difference)) 
+				break; //equalize condition met
+			
+			k->increaseSize(); //increases c or k
+			//if(k->getEP("h") <= k->getEP("w"))
+			//	k->increaseEP("h", 1);
+		//	else	k->increaseEP("w", 1);
+			computeAvgTime(); //update the avg time
+			count++;
+		}
+
+		cout << "Equalize count: " << count << endl;
+
+	}
+
+	void maximizeKernelSize(double fill_percent_p1 = 0.75) 
+	{
+		//try to fill this much percent of the wafer in phase 1
+		double filled_percent = (double)(getTotalKernelArea()) / (double)(getWaferArea()); 
+		Kernel* k;
+		int fail_count = 0;
+
+		//until most of the wafer is filled
+		while(filled_percent < fill_percent_p1)
+		{
+			//slightly increase the size of the largest kernel
+			k = getLongestKernel();
+			if(k->increaseSize())
+			{
+				fail_count = 0;
+			}
+			//if fail to increase size 3 times, max size reached
+			else if(++fail_count >=3) 
+			{
+				break;
+			}
+			k->computePerformance();
+			//printARs();
+					
+
+		//	equalizeKernelTimes(0.05);
+
+	cout << "avg_time: " << computeAvgTime() << endl;
+	cout << "max_time: " << getMaxTime() << endl;
+	printTimeAndArea();
+			filled_percent = (double)(getTotalKernelArea()) / (double)(getWaferArea()); 
+			cout << "filled_percent: " << filled_percent  << endl << endl;
+
+//			if(filled_percent > fill_percent_p1)
+				updateVisual();
+			
+			//if a kernel is too large to fit on wafer, quit
+			if(kernelExceedsWaferSize())
+			{
+				break;
+			}
+		}
+		printARs();
+		updateVisual();
+	}
+
+	//for each kernel, slightly increase its size until
+	//it is very close to targetAR
+	void achievePreciseAR(double precision = 0.05)
+	{
+		Kernel* k;
+		for(int i = 0; i < kernels.size(); i++)
+		{
+			k = kernels[i];
+			bool AR_less_than_target = false;
+			if(k->getAR() < k->getTargetAR())
+				AR_less_than_target = true;
+
+			while(abs((k->getAR() - k->getTargetAR()) / k->getTargetAR()) > precision)
+			{
+				if(AR_less_than_target) 
+				{
+					if(k->getAR() > k->getTargetAR())
+						break;
+				}
+				else
+				{
+					if(k->getAR() < k->getTargetAR())
+						break;
+				}
+				
+				if(!(k->increaseSize()))	
+					break;
+
+				k->computePerformance();
+			}
+		}
+			double filled_percent = (double)(getTotalKernelArea()) / (double)(getWaferArea()); 
+			cout << "filled_percent: " << filled_percent  << endl << endl;
+
+	}
+
+	//check that each kernel meets the memory constraint
+	//and does not use more then 48kB per core
+	//if a kernel requires too much memory,
+	//increase the size
+	bool enforceMemoryConstraint()
+	{
+		Kernel* k;
+		for(int i = 0; i < kernels.size(); i++)
+		{
+			//TODO insert memory constraint check here!
+		}
+
+		return true;
+	}
+
+	//perform Simulated Annealing on the kernel placement to find a layout
+	//Optimize: wirelength
+	//Constraints: fits within WSE
+	void slicing_layout_SA()
+	{
+		//initialize the slicing instructions. size should be 1 less than # kernels
+		//start out with all horizontal cut 'h' instructions
+		for(int i = 0; i < kernels.size()-1; i++)
+			slicing.push_back('h');
+
+		//now, the layout is dictated by the order of the kernels
+		//and the slicing instructions
+		//E.G. k1 h k2 h k3 h k4
+		//
+		
 	}
 
 
