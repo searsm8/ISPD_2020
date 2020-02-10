@@ -44,28 +44,30 @@ int main(int argc, char** argv)
 	CometPlacer placer = CometPlacer(kgraph, output, wirepenalty, timelimit, width, height);
 
 
-	placer.updateVisual();
+//	placer.updateVisual();
 	placer.printTimeAndArea();
-	placer.printKernels();
+//	placer.printKernels();
 
 	//placer.printKernels();
 	//placer.printInfo();
 	cout << "avg_time: " << placer.computeAvgTime() << endl;
 	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual();
+	//placer.updateVisual();
 
 //	placer.equalizeKernelTimes();
 	cout << "avg_time: " << placer.computeAvgTime() << endl;
 	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual(); 
+	//placer.updateVisual(); 
 	
 	placer.maximizeKernelSize(0.8);
 	placer.enforceMemoryConstraint();
 	//placer.printKernels();
 	placer.achievePreciseAR(0.01);
+	placer.avoid_overlap();
+	placer.checkPlacementLegality();
 	cout << "avg_time: " << placer.computeAvgTime() << endl;
 	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual(); 
+//	placer.updateVisual(); 
 	placer.printARs();
 	return 1;
 }

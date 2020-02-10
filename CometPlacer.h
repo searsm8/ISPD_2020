@@ -9,7 +9,7 @@
 //if VISUALIZE is defined, then the SDL library
 //will be used to create a visualization
 //if SDL is not installed, comment this #define
-#define VISUALIZE
+//#define VISUALIZE
 
 #ifdef VISUALIZE
 #include "visual/VisualizeWSE.h"
@@ -614,7 +614,46 @@ public:
 	}
 
 
+	// vector<Kernel*> kernelsi
+		
+
+	 static bool compByArea(Kernel* a, Kernel* b) {
+        	return a->getArea() < b->getArea();
+   	 }
+   	
+	void avoid_overlap(){
+
+		sort( kernels.begin( ), kernels.end( ), compByArea);
+		
+		int x_curr=0, y_curr=0;
+		vector <int> height_vec;
+		Kernel* k;
+		for(int i=0; i<kernels.size();i++){
+			if(x_curr+kernels[i]->getWidth()<width){
+				kernels[i]->setX(x_curr);
+				kernels[i]->setY(y_curr);
+			}
+			else{
+				kernels[i]->setX(0);
+				y_curr= *max_element(height_vec.begin(), height_vec.end())+1;
+				kernels[i]->setY(y_curr);
+				height_vec.erase(std::remove(height_vec.begin(), height_vec.end(), y_curr), height_vec.end());
+			}
+			height_vec.push_back(kernels[i]->getHeight()+y_curr);
+			x_curr=kernels[i]->getWidth()+1;
+		}
+
+	}	
+
+
 };
+
+
+
+
+
+
+
 
 #endif
 
