@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual(); 
 	
-	placer.maximizeKernelSize(0.8);
+	placer.maximizeKernelSize(0.6);
 	placer.enforceMemoryConstraint();
 	//placer.printKernels();
 	placer.achievePreciseAR(0.01);
@@ -67,5 +67,8 @@ int main(int argc, char** argv)
 	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual(); 
 	placer.printARs();
+
+	placer.fitKernelsToWafer();
+	placer.updateVisual(); 
 	return 1;
 }

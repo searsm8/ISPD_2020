@@ -80,7 +80,7 @@ public:
 			if(rand()%2 == 0)
 				new_AR = 1 / new_AR;
 
-		//	new_AR=1;
+			new_AR=.52;
 
 			kernels[i]->setAR(new_AR);
 			cout << kernels[i]->getName() << " AR: " << new_AR << endl;
@@ -262,6 +262,11 @@ public:
 	void updateVisual()
 	{
 #ifdef VISUALIZE
+		for(int i = 0; i < kernels.size(); i++)
+		{
+			kernels[i]->updateXY();
+		}
+
 		updateWSE(window, kernels, iteration);
 		//wait for any key to be pressed
 		SDL_Event event;
@@ -532,7 +537,7 @@ public:
 			filled_percent = (double)(getTotalKernelArea()) / (double)(getWaferArea()); 
 			cout << "filled_percent: " << filled_percent  << endl << endl;
 
-//			if(filled_percent > fill_percent_p1)
+			if(filled_percent > fill_percent_p1)
 				updateVisual();
 			
 			//if a kernel is too large to fit on wafer, quit
@@ -611,6 +616,80 @@ public:
 		//E.G. k1 h k2 h k3 h k4
 		//
 		
+	}
+
+	//place the kernels so that they fit in the wafer
+	void fitKernelsToWafer()
+	{
+		Kernel* k = head;
+		Kernel* next = k->getNextKernel();
+		int row = 0;
+		int next_row = k->getBottom();
+		bool going_right = true; 
+		bool block_placed = false;
+
+		cout << "\n***BEGIN fitKernelsToWafer()***\n";
+	
+		//traverse the kernels from 1st to last
+		while(next != NULL)
+		{
+			block_placed = false;
+
+			//try to place next on right
+			if(going_right)
+			if(k->getRight() + next->getWidth() <= width)
+			{
+				next->setLeft(k->getRight() + 1);
+				next->setTop(row);
+				block_placed = true;
+
+				if(next->getBottom() > next_row)
+					next_row = next->getBottom();
+			}
+
+			//try to place next on left
+			if(!going_right)
+			if(k->getLeft() - next->getWidth() >= 0)
+			{
+				next->setRight(k->getLeft() - 1);
+				next->setTop(row);
+				block_placed = true;
+
+				if(next->getBottom() > next_row)
+					next_row = next->getBottom();
+			}
+
+			//try to place next on bottom
+			if(!block_placed)
+			if(k->getBottom() + next->getHeight() < height)
+			{
+				//if on the right half, push to right wall
+				if(k->getLeft()+k->getWidth()/2 > width/2)
+					next->setRight(width);
+				else //else on left half, push to left wall
+					next->setLeft(0);
+
+				block_placed = true;
+				going_right = !going_right;
+				row = next_row;
+				next->setY(row);
+
+				next_row = next->getBottom();
+			}
+			else 
+			{
+				cout << "NO MORE ROOM FOR KERNELS!!!\n";
+			}
+			
+			updateVisual();
+			cout << "Placed kernel: " << next->getName() << endl;
+			cout << "(row = " << row << ", next_row = " << next_row << ")\n";
+
+			k = next;
+		       	next = next->getNextKernel();
+		}
+		
+		cout << "\n***END fitKernelsToWafer()***\n";
 	}
 
 

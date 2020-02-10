@@ -170,8 +170,6 @@ public:
 		convs[1].x = new_X;
 		new_X += convs[1].width;
 		convs[2].x = new_X;
-		new_X += convs[2].width;
-		convs[3].x = new_X;
 	}
 
 	void updateY()
@@ -180,7 +178,12 @@ public:
 		convs[0].y = new_Y;
 		convs[1].y = new_Y;
 		convs[2].y = new_Y;
-		convs[3].y = new_Y;
+	}
+
+	void updateXY()
+	{
+		updateX();
+		updateY();
 	}
 
 	//gives an array of ints to help graphically represent the kernel

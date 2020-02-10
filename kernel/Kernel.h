@@ -85,6 +85,14 @@ public:
 
 	int getY() { return y; }
 
+	int getLeft() { return x; }
+
+	int getRight() { return x + width; }
+
+	int getTop() { return y; }
+
+	int getBottom() { return y + height; }
+
 	int getWidth() { return width; }
 
 	int getHeight() { return height; }
@@ -121,11 +129,23 @@ public:
 
 	void setY(int new_Y) { y = new_Y; }
 
+	void setLeft(int left) { x = left; } 
+
+	void setRight(int right) { x = right - width; } 
+
+	void setTop(int top) { y = top; } 
+
+	void setBottom(int bottom) { y = bottom - height; } 
+
 	void setNextKernel(Kernel* next) { next_kernel = next; }
 
 	void setName(string new_name) { name = new_name; }
 
 	void setAR(double new_AR) { targetAR = new_AR; }
+
+	virtual void updateXY()
+	{
+	}
 
 	virtual bool setEP(string key, int val)
 	{
