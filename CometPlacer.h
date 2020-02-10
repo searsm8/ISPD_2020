@@ -64,6 +64,8 @@ public:
 		window = createWSE(width, height);
 #endif
 
+		//TODO generate random seed from time
+		//
 		//create a normal distribution for Aspect Ratios
 		random_device rd{};
 		mt19937 gen{rd()};
@@ -80,7 +82,7 @@ public:
 			if(rand()%2 == 0)
 				new_AR = 1 / new_AR;
 
-			new_AR=.52;
+			new_AR=.5;
 
 			kernels[i]->setAR(new_AR);
 			cout << kernels[i]->getName() << " AR: " << new_AR << endl;
@@ -164,6 +166,7 @@ public:
 
 		//set the connection
 		k1->setNextKernel(k2);
+		k2->setPrevKernel(k1);
 	}	
 
 	void readKgraph(string kgraph_filename)
@@ -601,23 +604,45 @@ public:
 		return true;
 	}
 
+/*
 	//perform Simulated Annealing on the kernel placement to find a layout
 	//Optimize: wirelength
 	//Constraints: fits within WSE
 	void slicing_layout_SA()
 	{
-		//initialize the slicing instructions. size should be 1 less than # kernels
-		//start out with all horizontal cut 'h' instructions
-		for(int i = 0; i < kernels.size()-1; i++)
-			slicing.push_back('h');
 
 		//now, the layout is dictated by the order of the kernels
 		//and the slicing instructions
 		//E.G. k1 h k2 h k3 h k4
 		//
 		
+		
 	}
 
+	void initializeAnnealing()
+	{
+		//initialize the slicing instructions. size should be 1 less than # kernels
+		//start out with all horizontal cut 'h' instructions
+		for(int i = 0; i < kernels.size()-1; i++)
+			slicing.push_back('h');
+	}
+
+	bool performAnnealingStep(double temp)
+	{
+		performMove(temp);
+		return evaluateMove(temp);
+	}
+
+	void performMove(double temp)
+	{
+	}
+
+	//after finding a layout that fits, give definite (x,y) 
+	//coordinates for each kernel
+	void solidify_slicing_layout()
+	{
+	}
+*/
 	//place the kernels so that they fit in the wafer
 	void fitKernelsToWafer()
 	{
@@ -690,7 +715,7 @@ public:
 		}
 		
 		cout << "\n***END fitKernelsToWafer()***\n";
-	}
+	} //end fitKernelsToWafer()
 
 
 };

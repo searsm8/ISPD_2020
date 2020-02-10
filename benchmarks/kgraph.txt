@@ -11,14 +11,12 @@ dblock[7] f=128 h=56 w=56
 dblock[8] f=256 h=56 w=56
 dblock[9] f=256 h=56 w=56
 (* Connectivity *)
-input[1]:_ -> dblock[1]:x, shape:[56][56][256]
-dblock[1]:y -> dblock[2]:x, shape:[28][28][512]
-dblock[2]:y -> dblock[3]:x, shape:[28][28][512]
+input[0]:_ -> dblock[1]:x, shape:[56][56][256]
+dblock[1]:y -> dblock[2]:_, shape:[28][28][512]
+dblock[2]:y -> dblock[3]:_, shape:[28][28][512]
 dblock[3]:y -> dblock[4]:_, shape:[28][28][512]
 dblock[4]:y -> dblock[5]:_, shape:[28][28][512]
 dblock[5]:y -> dblock[6]:_, shape:[28][28][512]
 dblock[6]:y -> dblock[7]:_, shape:[28][28][512]
 dblock[7]:y -> dblock[8]:_, shape:[28][28][512]
 dblock[8]:y -> dblock[9]:_, shape:[28][28][512]
-dblock[9]:y -> dblock[10]:_, shape:[28][28][512]
-dblock[10]:y -> output[0]:_, shape:[28][28][512]

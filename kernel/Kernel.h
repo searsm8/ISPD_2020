@@ -35,6 +35,7 @@ public:
 	map<string, int> EP; //Execution parameters
 
 	Kernel* next_kernel; //pointer to the next kernel in the pipeline
+	Kernel* prev_kernel;
 
 	//constructors
 	Kernel()
@@ -138,6 +139,8 @@ public:
 	void setBottom(int bottom) { y = bottom - height; } 
 
 	void setNextKernel(Kernel* next) { next_kernel = next; }
+
+	void setPrevKernel(Kernel* prev) { prev_kernel = prev; }
 
 	void setName(string new_name) { name = new_name; }
 
