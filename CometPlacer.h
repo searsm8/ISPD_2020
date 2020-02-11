@@ -20,6 +20,7 @@
 #include <iostream>
 #include <fstream>
 #include <random>
+#include <time.h>
 
 
 class CometPlacer
@@ -32,12 +33,18 @@ private:
 	int width;
 	int height;
 
+	//keep pointers to all the kernels in the layout
 	vector<Kernel*> kernels;
+
+	//each kernel will be placed in a wrapper
+	//for use in the slicing annealing
+	vector<Kernel_Wrapper*> wrappers;
+
 	Kernel* head; //head of the chain of kernels
 	int iteration;
 	long avg_time;
 
-	vector<char> slicing; //dictates the kernel layout with a series of slicing steps
+	vector<string> slicing; //dictates the kernel layout with a series of slicing steps
 	string output;
 
 #ifdef VISUALIZE
@@ -63,11 +70,8 @@ public:
 #ifdef VISUALIZE
 		window = createWSE(width, height);
 #endif
-
-		//TODO generate random seed from time
-		//
 		//create a normal distribution for Aspect Ratios
-		random_device rd{};
+		random_device rd("default");
 		mt19937 gen{rd()};
 		
 		double mean = 1.5, std_dev = .3;
@@ -82,13 +86,14 @@ public:
 			if(rand()%2 == 0)
 				new_AR = 1 / new_AR;
 
-			new_AR=.5;
+		//	new_AR=2;
 
 			kernels[i]->setAR(new_AR);
 			cout << kernels[i]->getName() << " AR: " << new_AR << endl;
 		}
 
 		setInitialPlacement();
+		initializeAnnealing();
 		computeAvgTime();
 	}
 
@@ -119,19 +124,21 @@ public:
 			}
 
 		int i = 1;
+		Kernel* new_kernel;
 		if(elements[0].find("dblock") != -1)
 		{
-			Dblock* new_kernel = new Dblock(H, W, F, i,i,i,i,i,i,i,i);
-			new_kernel->setName(elements[0]);
-			kernels.push_back(new_kernel);
+			new_kernel = new Dblock(H, W, F, i,i,i,i,i,i,i,i);
 		}
 		else if(elements[0].find("cblock") != -1)
 		{
-			Cblock* new_kernel = new Cblock(H, W, F, i,i,i,i,i,i,i,i,i,i);
-			new_kernel->setName(elements[0]);
-			kernels.push_back(new_kernel);
+			new_kernel = new Cblock(H, W, F, i,i,i,i,i,i,i,i,i,i);
 		}
-	}
+
+		new_kernel->setName(elements[0]);
+		kernels.push_back(new_kernel);
+		wrappers.push_back(new Kernel_Wrapper(new_kernel));
+
+	} //end readNode()
 
 	void readConnection(string line)
 	{
@@ -598,33 +605,45 @@ public:
 		Kernel* k;
 		for(int i = 0; i < kernels.size(); i++)
 		{
-			//TODO insert memory constraint check here!
+			k = kernels[i];
+			//memory constraint check here!
+			while(k->getMemory() > MAX_ALLOWED_MEMORY)
+			{
+				k->increaseSize();
+				k->computePerformance();
+			}
+
+			cout << k->getName() << " meets memory contraints with " << k->getMemory() << " kB/core!\n";
+			k->printPerformance();
+			updateVisual();
 		}
 
 		return true;
 	}
 
-/*
 	//perform Simulated Annealing on the kernel placement to find a layout
 	//Optimize: wirelength
 	//Constraints: fits within WSE
 	void slicing_layout_SA()
 	{
 
-		//now, the layout is dictated by the order of the kernels
+		//the layout is dictated by the order of the kernels
 		//and the slicing instructions
-		//E.G. k1 h k2 h k3 h k4
+		//E.G. k1 k2 h k3 k4 hh
 		//
 		
 		
 	}
 
+	//initialize the slicing instructions. 
 	void initializeAnnealing()
 	{
-		//initialize the slicing instructions. size should be 1 less than # kernels
+		//first slicing should always be blank ""
+		slicing.push_back("");
 		//start out with all horizontal cut 'h' instructions
-		for(int i = 0; i < kernels.size()-1; i++)
-			slicing.push_back('h');
+		//#slices should be 1 less than # kernels
+		for(int i = 1; i < kernels.size(); i++)
+			slicing.push_back("h");
 	}
 
 	bool performAnnealingStep(double temp)
@@ -637,12 +656,17 @@ public:
 	{
 	}
 
+	bool evaluateMove(double temp)
+	{
+		return true;
+	}
+
 	//after finding a layout that fits, give definite (x,y) 
 	//coordinates for each kernel
 	void solidify_slicing_layout()
 	{
 	}
-*/
+
 	//place the kernels so that they fit in the wafer
 	void fitKernelsToWafer()
 	{

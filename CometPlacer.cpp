@@ -58,9 +58,11 @@ int main(int argc, char** argv)
 	cout << "avg_time: " << placer.computeAvgTime() << endl;
 	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual(); 
-	
-	placer.maximizeKernelSize(0.6);
+
 	placer.enforceMemoryConstraint();
+	placer.updateVisual(); 
+
+	placer.maximizeKernelSize(0.6);
 	//placer.printKernels();
 //	placer.achievePreciseAR(0.01);
 	cout << "avg_time: " << placer.computeAvgTime() << endl;
