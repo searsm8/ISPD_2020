@@ -1,5 +1,4 @@
 all:
-	g++ CometPlacer.h -std=c++11
 	g++ CometPlacer.cpp $(shell pkg-config --cflags --libs sdl2) -std=c++11 -o CometPlacer.out
 
 clean:

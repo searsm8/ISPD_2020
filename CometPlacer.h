@@ -36,9 +36,6 @@ private:
 	//keep pointers to all the kernels in the layout
 	vector<Kernel*> kernels;
 
-	//each kernel will be placed in a wrapper
-	//for use in the slicing annealing
-	vector<Kernel_Wrapper*> wrappers;
 
 	Kernel* head; //head of the chain of kernels
 	int iteration;
@@ -136,7 +133,6 @@ public:
 
 		new_kernel->setName(elements[0]);
 		kernels.push_back(new_kernel);
-		wrappers.push_back(new Kernel_Wrapper(new_kernel));
 
 	} //end readNode()
 
