@@ -229,7 +229,7 @@ public:
 		return net_benefit;
 	}
 
-       	bool increaseEPtoNextValue(string EP_key)
+       	bool setEPtoNextValue(string EP_key, bool increase=true)
 	{
 		for(Kernel k : convs)
 		{
@@ -239,17 +239,17 @@ public:
 
 		bool change_made = false;
 
-		double min_EP = convs[0].getNextEPValue(EP_key);
+		double min_EP = convs[0].getNextEPValue(EP_key, increase);
 		double next_EP = min_EP;
 		for(int i = 1; i < convs.size(); i++)
 		{
-			next_EP = convs[i].getNextEPValue(EP_key);
+			next_EP = convs[i].getNextEPValue(EP_key, increase);
 
 			if(next_EP < min_EP)
 				min_EP = next_EP;
 		}
 
-	cout << getName() << ": increaseEPtoNextValue("<<EP_key<<") to "<<next_EP<<endl;
+	cout << getName() << ": setEPtoNextValue("<<EP_key<<", "<<increase<<") to "<<next_EP<<endl;
 
 		for(int i = 0; i < convs.size(); i++)
 		{
@@ -263,7 +263,7 @@ public:
 		return change_made;
 		
 	}
-
+	//
 	//returns the Conv that currently has the longest time
 	Kernel* getLongestConv()
 	{
@@ -279,40 +279,48 @@ public:
 		} 
 		return longest_conv;	
 	}
-		
-	bool increaseWidth()
+	
+	//returns the Conv that currently has the shortest time
+	Kernel* getShortestConv()
 	{
-		cout << "increaseWidth() of Dblock: " << getName() << endl;
-		Kernel* k = getLongestConv();
-		if(k->increaseEPtoNextValue("k"))
-			return true;
-		//if unable to increase width anymore, must increase height instead
-		//else return increaseHeight();
-		else return false;
+		Kernel* shortest_conv = &convs[0];
+		double shortest_time = shortest_conv->getTime();
+		for(int i = 1; i < convs.size(); i++)
+		{
+			if(convs[i].getTime() < shortest_time)
+			{
+				shortest_conv = &convs[i];
+				shortest_time = shortest_conv->getTime();
+			}
+		} 
+		return shortest_conv;	
+	}
+		
+	bool changeWidth(bool increase=true)
+	{
+		cout << "changeWidth() of Dblock: " << getName() << endl;
+		Kernel* k;
+	        if(increase) k = getLongestConv();
+		else k = getShortestConv();
+
+		return k->setEPtoNextValue("k", increase);
 	}
 
-	bool increaseHeight()
+	bool changeHeight(bool increase=true)
 	{		
-		cout << "increaseHeight() of Dblock: " << getName() << endl;
+		cout << "changeHeight() of Dblock: " << getName() << endl;
 		cout << "EP_to_increase: " << EP_to_increase << endl;
-		Kernel* k = getLongestConv();
+		Kernel* k;
+	        if(increase) k = getLongestConv();
+		else k = getShortestConv();
 
 		//increase the next EP	
-		bool success = increaseEPtoNextValue(EP_to_increase);
+		bool success = setEPtoNextValue(EP_to_increase, increase);
 
 		//change the EP to be increased
-		if(EP_to_increase == "c")
-		{
-			EP_to_increase = "h";
-		}
-		else if(EP_to_increase == "h")
-		{
-			EP_to_increase = "w";
-		}
-		else if(EP_to_increase == "w")
-		{
-			EP_to_increase = "c";
-		}
+		if(EP_to_increase == "c") EP_to_increase = "h";
+		else if(EP_to_increase == "h") EP_to_increase = "w";
+		else if(EP_to_increase == "w") EP_to_increase = "c";
 
 		return success;
 	}

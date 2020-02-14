@@ -63,6 +63,7 @@ public:
 	
 	
 //MODIFIERS
+	void setCut(char new_cut) { cut = new_cut; } 
 	
 //COMPUTATORS
 	

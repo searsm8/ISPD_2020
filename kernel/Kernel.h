@@ -161,39 +161,35 @@ public:
 		setEP(key, EP[key]+val); 
 	}
 
-	virtual bool increaseEPtoNextValue(string EP_key)
+	virtual bool setEPtoNextValue(string EP_key, bool increase)
 	{
 		return false;
 	}
-
+	//
 	//increase the size of the kernel based on the target AR
 	//returns true if an increase was made
 	virtual bool increaseSize()
 	{
 		//don't increase an EP beyond the FP!!! it gains no time because ceil()
 		if(getAR() < getTargetAR())
-		{
-			return increaseHeight();
-		}
+			return changeHeight(true);
 		else
-		{
-			return increaseWidth();
-		}
-		
-		return false; //no increase was made because already too big!
+			return changeWidth(true);
 	}
 
-	virtual bool increaseWidth()
+	//decrease the size of the kernel based on the target AR
+	//returns true if an decrease was made
+	virtual bool decreaseSize()
 	{
-		cout << "CALLED increaseWidth() from Kernel class!" << endl;
-		return true;
+		if(getAR() > getTargetAR())
+			return changeHeight(false);
+		else
+			return changeWidth(false);
 	}
+
+	virtual bool changeWidth(bool increase) { return true; }
 	
-	virtual bool increaseHeight()
-	{
-		cout << "CALLED increaseHeight() from Kernel class!" << endl;
-		return true;
-	}
+	virtual bool changeHeight(bool increase) { return true; }
 	
 //COMPUTATORS
 	int computeHeight() { return -1; }

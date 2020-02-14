@@ -17,6 +17,8 @@
 
 #include "util.h"
 #include "kernel/Kernels.h"
+#include "Slicing_Annealer/Slicing_Annealer.h"
+
 #include <iostream>
 #include <fstream>
 #include <random>
@@ -41,8 +43,9 @@ private:
 	int iteration;
 	long avg_time;
 
-	vector<string> slicing; //dictates the kernel layout with a series of slicing steps
 	string output;
+
+	Slicing_Annealer<Kernel> annealer;
 
 #ifdef VISUALIZE
 	SDL_Window* window;
@@ -53,17 +56,10 @@ public:
 
 	//constructor
 	CometPlacer(string kgraph_filename, string output, int wirepenalty, int timelimit, int width, int height)
+	: output(output), wirepenalty(wirepenalty), timelimit(timelimit), width(width), height(height), iteration(0), avg_time(0)
 	{
 		//read the input file and populate the kernels
 		readKgraph(kgraph_filename);	
-		this->output = output;
-		this->wirepenalty = wirepenalty;
-		this->timelimit = timelimit;
-		this->width = width;
-		this->height =height;
-
-		iteration = 0;
-		avg_time = 0;
 #ifdef VISUALIZE
 		window = createWSE(width, height);
 #endif
@@ -83,14 +79,13 @@ public:
 			if(rand()%2 == 0)
 				new_AR = 1 / new_AR;
 
-		//	new_AR=2;
+			new_AR=2;
 
 			kernels[i]->setAR(new_AR);
 			cout << kernels[i]->getName() << " AR: " << new_AR << endl;
 		}
 
 		setInitialPlacement();
-		initializeAnnealing();
 		computeAvgTime();
 	}
 
@@ -259,7 +254,7 @@ public:
 	{
 		for(Kernel* k : kernels)
 		{
-			cout << k->getName() << " (Time: " << k->getTime() << " (Area: " << k->getArea() << endl;;	
+			cout << k->getName() << " (Time): " << k->getTime() << " (Area): " << k->getArea() << endl;;	
 		}
 	}
 
@@ -450,7 +445,7 @@ public:
 		double d = k->computeNetBenefitOfIncreasing(key); 
 		cout << "Net benefit of increasing " << key << ": " << d << endl;
 
-		k->increaseEPtoNextValue(key);
+		k->setEPtoNextValue(key, true);
 		k->computePerformance();
 		k->printPerformance();
 		cout << endl;
@@ -611,57 +606,11 @@ public:
 
 			cout << k->getName() << " meets memory contraints with " << k->getMemory() << " kB/core!\n";
 			k->printPerformance();
-			updateVisual();
 		}
 
 		return true;
 	}
-
-	//perform Simulated Annealing on the kernel placement to find a layout
-	//Optimize: wirelength
-	//Constraints: fits within WSE
-	void slicing_layout_SA()
-	{
-
-		//the layout is dictated by the order of the kernels
-		//and the slicing instructions
-		//E.G. k1 k2 h k3 k4 hh
-		//
-		
-		
-	}
-
-	//initialize the slicing instructions. 
-	void initializeAnnealing()
-	{
-		//first slicing should always be blank ""
-		slicing.push_back("");
-		//start out with all horizontal cut 'h' instructions
-		//#slices should be 1 less than # kernels
-		for(int i = 1; i < kernels.size(); i++)
-			slicing.push_back("h");
-	}
-
-	bool performAnnealingStep(double temp)
-	{
-		performMove(temp);
-		return evaluateMove(temp);
-	}
-
-	void performMove(double temp)
-	{
-	}
-
-	bool evaluateMove(double temp)
-	{
-		return true;
-	}
-
-	//after finding a layout that fits, give definite (x,y) 
-	//coordinates for each kernel
-	void solidify_slicing_layout()
-	{
-	}
+	
 
 	//place the kernels so that they fit in the wafer
 	void fitKernelsToWafer()
@@ -736,6 +685,24 @@ public:
 		
 		cout << "\n***END fitKernelsToWafer()***\n";
 	} //end fitKernelsToWafer()
+
+	void decreaseBlocks()
+	{
+		for(int i = 0; i < kernels.size(); i++)
+		{
+			Kernel* k = kernels[i];
+			k->decreaseSize(); //decrease size
+			k->computePerformance();
+			updateVisual();
+		}
+	}
+
+	void performAnnealing()
+	{
+		annealer.setBlocks(kernels);
+		annealer.initializeOps();
+		annealer.initializeTemp();
+	}
 
 
 };

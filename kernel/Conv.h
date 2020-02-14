@@ -154,16 +154,17 @@ public:
 		
 	}
 
-
 	//find the next EP value that actually benefits the time performance
 	//of this kernel. 
 	//Not all EP value increases will benefit the time due to ceil()
-	bool increaseEPtoNextValue(string EP_key)
+	bool setEPtoNextValue(string EP_key, bool increase=true)
 	{
-		return setEP(EP_key, getNextEPValue(EP_key));
+		return setEP(EP_key, getNextEPValue(EP_key, increase));
 	}
 
-	double getNextEPValue(string EP_key)
+
+	//return the next EP value for an increase or decrease
+	double getNextEPValue(string EP_key, bool increase=true)
 	{
 		double my_FP = getAnalogousFP(EP_key);
 		
@@ -175,17 +176,34 @@ public:
 			return orig_EP;
 		}
 
-		if(orig_EP >= my_FP)
+		if(increase && orig_EP >= my_FP)
 		{
 			cout << "No increase possible for EP: " << EP_key << endl;
+			return orig_EP;
+		}
+		if(!increase && orig_EP <= 1)
+		{
+			cout << "No decrease possible for EP: " << EP_key << endl;
 			return orig_EP;
 		}
 		
 		double orig_time_term = ceil(my_FP / orig_EP);
 
-		double new_EP = ceil(my_FP / (orig_time_term - 1));
+		double new_EP;
+		if(increase)
+			new_EP = ceil(my_FP / (orig_time_term - 1));
+		else new_EP = floor(my_FP / (orig_time_term + 1));
+		if(new_EP == orig_EP)
+			new_EP += (increase ? 1 : -1);
+
+		cout << "getNextEPValue("<<EP_key<<", "<<increase<<") from " << orig_EP << " to " << new_EP << endl;
+
+		//don't increase all the way to FP!
+		if(increase && new_EP >= my_FP) 
+			return orig_EP;
 
 		return new_EP;
 	}
+
 };
 #endif
