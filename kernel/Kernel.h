@@ -146,6 +146,44 @@ public:
 
 	void setAR(double new_AR) { targetAR = new_AR; }
 
+	//change the shape of the kernel to achieve the new target AR
+	void changeShapeToAR(double new_AR)
+	{
+		targetAR = new_AR;
+
+		int orig_area = getArea();
+
+		//change the shape repeatedly by increasing and decreasing
+		//stop when the target AR is achieved or surpassed.
+		bool AR_less_than_target = false;
+		if(getAR() < getTargetAR())
+			AR_less_than_target = true;
+
+		while(1)
+		{
+			cout <<"BEFORE MOVE: Target AR: "<<getTargetAR()<<" Actual AR: " << getAR() << endl;
+			//if started less than target AR, but now is greater than target AR, stop
+			if(AR_less_than_target) 
+			{
+				if(getAR() >= getTargetAR())
+					break;
+			}
+			else
+			{
+				if(getAR() <= getTargetAR())
+					break;
+			}
+					
+			if(getArea() < orig_area)
+				increaseSize();
+			else decreaseSize();
+		
+			computePerformance();
+			cout <<"AFTER MOVE: Target AR: "<<getTargetAR()<<" Actual AR: " << getAR() << endl;
+		}
+
+	}
+
 	virtual void updateXY()
 	{
 	}

@@ -73,5 +73,14 @@ int main(int argc, char** argv)
 	placer.fitKernelsToWafer();
 	placer.updateVisual(); 
 
+	placer.printTimeAndArea();
+	placer.updateVisual(); 
+	placer.changeAllAR(2.0);
+	placer.printTimeAndArea();
+	placer.updateVisual(); 
+
+	placer.fitKernelsToWafer();
+	placer.updateVisual(); 
+
 	return 1;
 }

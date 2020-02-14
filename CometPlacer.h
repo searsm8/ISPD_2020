@@ -79,7 +79,7 @@ public:
 			if(rand()%2 == 0)
 				new_AR = 1 / new_AR;
 
-			new_AR=2;
+//			new_AR=2;
 
 			kernels[i]->setAR(new_AR);
 			cout << kernels[i]->getName() << " AR: " << new_AR << endl;
@@ -693,6 +693,15 @@ public:
 			Kernel* k = kernels[i];
 			k->decreaseSize(); //decrease size
 			k->computePerformance();
+			updateVisual();
+		}
+	}
+
+	void changeAllAR(double new_AR)
+	{
+		for(int i = 0; i < kernels.size(); i++)
+		{
+			kernels[i]->changeShapeToAR(new_AR);
 			updateVisual();
 		}
 	}
