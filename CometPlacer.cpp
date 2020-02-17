@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 	placer.enforceMemoryConstraint();
 	placer.updateVisual(); 
 
-	placer.maximizeKernelSize(0.6);
+//	placer.maximizeKernelSize(0.6);
 //	placer.printKernels();
 //	placer.achievePreciseAR(0.01);
 //	cout << "avg_time: " << placer.computeAvgTime() << endl;

@@ -249,7 +249,7 @@ public:
 				min_EP = next_EP;
 		}
 
-	cout << getName() << ": setEPtoNextValue("<<EP_key<<", "<<increase<<") to "<<next_EP<<endl;
+//	cout << getName() << ": setEPtoNextValue("<<EP_key<<", "<<increase<<") to "<<next_EP<<endl;
 
 		for(int i = 0; i < convs.size(); i++)
 		{
@@ -298,7 +298,7 @@ public:
 		
 	bool changeWidth(bool increase=true)
 	{
-		cout << "changeWidth() of Dblock: " << getName() << endl;
+	//	cout << "changeWidth() of Dblock: " << getName() << endl;
 		Kernel* k;
 	        if(increase) k = getLongestConv();
 		else k = getShortestConv();
@@ -308,8 +308,8 @@ public:
 
 	bool changeHeight(bool increase=true)
 	{		
-		cout << "changeHeight() of Dblock: " << getName() << endl;
-		cout << "EP_to_increase: " << EP_to_increase << endl;
+	//	cout << "changeHeight() of Dblock: " << getName() << endl;
+//		cout << "EP_to_increase: " << EP_to_increase << endl;
 		Kernel* k;
 	        if(increase) k = getLongestConv();
 		else k = getShortestConv();
@@ -324,7 +324,6 @@ public:
 
 		return success;
 	}
-
 
 };
 #endif

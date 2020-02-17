@@ -21,6 +21,7 @@ using namespace std;
 class Kernel
 {
 private:
+	bool print = false;
 public:
 	static int kernel_count;
 
@@ -50,6 +51,7 @@ public:
 
 	void printParameters()
 	{
+		if(!print) return;
 		cout << "\nKernel " << ID << " at (" << x << ", " << y << ", R" << rotation << ")\n";
 	
 		cout << "Formal Parameters: ";
@@ -66,6 +68,7 @@ public:
 
 	virtual void printPerformance()
 	{
+		if(!print) return;
 		cout << "Performance metrics for kernel " << ID << ":\n";
 		cout << "Height: " << height << endl;
 		cout << "Width: "  << width  << endl;
@@ -161,7 +164,7 @@ public:
 
 		while(1)
 		{
-			cout <<"BEFORE MOVE: Target AR: "<<getTargetAR()<<" Actual AR: " << getAR() << endl;
+//			cout <<"BEFORE MOVE: Target AR: "<<getTargetAR()<<" Actual AR: " << getAR() << endl;
 			//if started less than target AR, but now is greater than target AR, stop
 			if(AR_less_than_target) 
 			{
@@ -175,11 +178,15 @@ public:
 			}
 					
 			if(getArea() < orig_area)
-				increaseSize();
-			else decreaseSize();
+			{
+				if(!increaseSize())
+					break;
+			}
+			else if(!decreaseSize())
+				break;
 		
 			computePerformance();
-			cout <<"AFTER MOVE: Target AR: "<<getTargetAR()<<" Actual AR: " << getAR() << endl;
+//			cout <<"AFTER MOVE: Target AR: "<<getTargetAR()<<" Actual AR: " << getAR() << endl;
 		}
 
 	}

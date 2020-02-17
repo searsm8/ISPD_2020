@@ -196,7 +196,7 @@ public:
 		if(new_EP == orig_EP)
 			new_EP += (increase ? 1 : -1);
 
-		cout << "getNextEPValue("<<EP_key<<", "<<increase<<") from " << orig_EP << " to " << new_EP << endl;
+//		cout << "getNextEPValue("<<EP_key<<", "<<increase<<") from " << orig_EP << " to " << new_EP << endl;
 
 		//don't increase all the way to FP!
 		if(increase && new_EP >= my_FP) 

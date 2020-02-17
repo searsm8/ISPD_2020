@@ -10,6 +10,10 @@
 
 using namespace std;
 
+//CONSTANTS
+	int VISUAL_UPDATE_INTERVAL = 10000; //how often the visualization gets updated
+	int MAX_ALLOWED_MEMORY = 48000; //for a single core on the WSE
+
 vector<string> split(const string& str, const string& delim)
 {
 	vector<string> tokens; //to be returned
@@ -25,6 +29,27 @@ vector<string> split(const string& str, const string& delim)
 	}
 	while(pos < str.length() && prev < str.length());
 	return tokens;
+}
+
+double Variance(std::vector<double> samples)
+{
+     int size = samples.size();
+
+     double variance = 0;
+     double t = samples[0];
+     for (int i = 1; i < size; i++)
+     {
+          t += samples[i];
+          double diff = ((i + 1) * samples[i]) - t;
+          variance += (diff * diff) / ((i + 1.0) *i);
+     }
+
+     return variance / (size - 1);
+}
+
+double StandardDeviation(std::vector<double> samples)
+{
+     return sqrt(Variance(samples));
 }
 #endif
 

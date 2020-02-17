@@ -28,8 +28,6 @@
 class CometPlacer
 {
 private:
-	int VISUAL_UPDATE_INTERVAL = 10000; //how often the visualization gets updated
-	int MAX_ALLOWED_MEMORY = 48000; //for a single core on the WSE
 	int wirepenalty; //how much to weight the wirelength
 	int timelimit; //runtime limit for program execution
 	int width;
@@ -235,7 +233,7 @@ public:
 		cout << "timelimit: " << timelimit << endl; 
 		cout << "Head Kernel: " << head->getName() << endl;
 		cout << "Total Wire Penalty: " << computeL1Penalty() << endl;
-		cout << "Max Time: " << getMaxTime() << endl;
+		cout << "Max Time: " << getLongestTime() << endl;
 		cout << endl;
 	}
 
@@ -252,6 +250,7 @@ public:
 
 	void printTimeAndArea()
 	{
+		cout << "Longest Time: " << getLongestTime() << endl;
 		for(Kernel* k : kernels)
 		{
 			cout << k->getName() << " (Time): " << k->getTime() << " (Area): " << k->getArea() << endl;;	
@@ -391,19 +390,9 @@ public:
 		return avg_time; 
 	}
 
-	int getMaxTime()
+	int getLongestTime()
 	{
-		int max_time = 0;
-		int next_time = 0;
-		//compute the avg_time
-		for(Kernel* k : kernels)
-		{
-			next_time = k->getTime();
-			if(next_time > max_time)
-				max_time = next_time;
-		}		
-
-		return max_time;
+		return getLongestKernel()->getTime();
 	}
 
 	//return pointer to the kernel with the longest execution time
@@ -417,7 +406,7 @@ public:
 			if(kernels[i]->getTime() > longest_time)
 			{
 				k = kernels[i];
-				longest_time = kernels[i]->getTime();
+				longest_time = k->getTime();
 			}
 		}
 
@@ -530,9 +519,9 @@ public:
 
 		//	equalizeKernelTimes(0.05);
 
-	cout << "avg_time: " << computeAvgTime() << endl;
-	cout << "max_time: " << getMaxTime() << endl;
-	printTimeAndArea();
+//	cout << "avg_time: " << computeAvgTime() << endl;
+//	cout << "max_time: " << getLongestTime() << endl;
+//	printTimeAndArea();
 			filled_percent = (double)(getTotalKernelArea()) / (double)(getWaferArea()); 
 			cout << "filled_percent: " << filled_percent  << endl << endl;
 
@@ -708,25 +697,36 @@ public:
 	void performAnnealing()
 	{
 		annealer.setBlocks(kernels);
-		annealer.initializeTemp();
 		annealer.initializeOps();
 
+		annealer.WSEcostFunction();
+		updateVisual(true);
+
+		annealer.initializeTemp();
+		updateVisual(true);
+
 		//annealer.performAnnealing();
-		for(int i = 0; i < 10; i++)
+		for(int i = 0; i < 20; i++)
 		{
-			for(int i = 0; i < 100; i++)
+			for(int i = 0; i < 10; i++)
 			{
-				for(int i = 0; i < 1000; i++)
+				for(int i = 0; i < 100; i++)
 				{
 					annealer.performAnnealingStep();
+
 				}
 				annealer.reduceTemp();
 				updateVisual();
+				if(annealer.getTemp() < 1)
+					break;
 			}
+				printTimeAndArea();
+				annealer.WSEcostFunction();
 				updateVisual(true);
+				if(annealer.getTemp() < 1)
+					return;
 		}
 	}
-
 
 };
 

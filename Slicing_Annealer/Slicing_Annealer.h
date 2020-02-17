@@ -14,21 +14,26 @@
 #include <vector>
 #include <iostream>
 #include <stack>
+#include <random>
+#include <time.h>
+
+#include "../util.h"
+
 
 using namespace std;
 
 template<class Block>//cost function?
 class Slicing_Annealer
 {
-	private:
+private:
 	vector<Block*> blocks;
 	vector<string> ops;	 //string of "h" horizontal cut and
 				//"v" vertical cuts
 
-	int max_width, max_height; //maximum size restrictions on the block layout
+	double max_width, max_height; //maximum size restrictions on the block layout
 	int wirepenalty;
 
-	vector<int> move_weights = {70, 20, 10}; //determines how often each type of move is done
+	vector<int> move_weights; //determines how often each type of move is done
 	double reduction_factor = 0.97; //factor that reduces annealing temperature
 	int steps_per_temp = 100; //number of steps before reducing temperature
 	double temp; 	//current annealing temperature
@@ -41,7 +46,8 @@ class Slicing_Annealer
 	vector<string> best_ops;
 	vector<int> previous_ops_count;
 
-	public:
+
+public:
 
 //CONSTRUCTORS
 
@@ -50,6 +56,7 @@ class Slicing_Annealer
 	Slicing_Annealer(int init_wirepenalty, int init_width, int init_height) 
 	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height)
 	{
+		move_weights = {70, 20, 10, 50, 0}; //determines how often each type of move is done
 	}
 
 
@@ -67,6 +74,8 @@ class Slicing_Annealer
 
 	void printOps()
 	{
+		return;
+
 		cout << "Slicing ops: ";
 		for(int i = 0; i < ops.size(); i++)
 			cout << blocks[i]->getName() << " " << ops[i] << " ";
@@ -77,9 +86,45 @@ class Slicing_Annealer
 
 	//initial temperature should be high enough such that bad moves 
 	//which are 3 std dev should be accepted with high probability
-	void initializeTemp()
+	//perform many random moves, record deltas
+	//set starting temperature equal to 30*std_dev
+	float initializeTemp()
 	{
-		temp = 10000;
+		int num_initialize_moves = blocks.size()*100;
+		temp = 100000; //set to very high temp (doesn't matter, since will accept all moves for now)
+		printf("Initializing temp...(%d random moves)\n", num_initialize_moves);
+		vector <double> deltas;
+		float new_cost, delta;
+			
+		//perform random cell swaps
+		for(int i = 0; i < num_initialize_moves; i++)
+			performMove(); //random move at very high temp
+			
+		//perform random cell swaps and record deltas	
+		for(int i = 0; i < num_initialize_moves; i++)
+		{
+			performMove(); //random move at very high temp
+			
+			findBestArea();
+					
+			new_cost = costFunction();
+		
+			delta = new_cost - best_cost;
+			deltas.push_back(delta);
+			
+			acceptMove(new_cost); //always accept the move during initialization	
+		}
+		
+		double std_dev = StandardDeviation(deltas);
+			
+		float start_temp = 30*std_dev; //for a temperature of 30*std_dev,
+				//there will be a 90% chance to accept a very bad change of 3*std_dev
+		printf("Starting Temp: %.3f\n", start_temp);
+		
+		//initialize alpha and beta based on the current area and wirelength
+		//initializeWeights(best_layout);
+			
+		return start_temp;
 	}
 
 	//initial op strings can be all random, or uniform
@@ -94,7 +139,7 @@ class Slicing_Annealer
 			previous_ops_count.push_back(0);
 
 		findBestArea();
-		best_layout = layout;
+		best_layout = new auto(*layout);
 		best_blocks = blocks;
 		best_ops = ops;
 		best_cost = costFunction();
@@ -122,7 +167,7 @@ class Slicing_Annealer
 		//return true if step was performed
 		//segfault in evaluateMove!
 		return evaluateMove();
-		return true;
+	//	return true;
 	}
 
 	void reduceTemp()
@@ -138,9 +183,11 @@ class Slicing_Annealer
 			case 1: move1(); break;
 			case 2: move2(); break;
 			case 3: move3(); break;
+			case 4: move4(); break;
+			case 5: move5(); break;
 			default:move1();
 		}
-		printOps();
+//		printOps();
 	}
 
 	//returns a number corresponding to a move picked randomly based on weights
@@ -245,6 +292,59 @@ class Slicing_Annealer
 		return;
 	} //end move3
 
+	//increase or decrease kernel size!
+	void move4()
+	{
+		cout << "move4()" << endl;
+		//if(computeTotalWirelength() * wirepenalty < getLongestTime())
+//		if(rand()%2 == 0)
+		if(true)
+		{
+//			Block* b = getLongestBlock();
+			for(int i = 0; i < blocks.size(); i++)
+			{
+				Block* b = getLongestBlock();;
+				b->increaseSize();
+				b->computePerformance();
+			}
+		}
+		else
+		{
+			//decrease size of a random block
+		//	Block* b = blocks[rand()%blocks.size()];
+			for(int i = 0; i < blocks.size(); i++)
+			{
+				Block* b = getShortestBlock();
+				b->decreaseSize();
+				b->computePerformance();
+			}
+			return;
+		}
+	} //end move4()
+
+	//give a block a new random AR and orientation
+	void move5()
+	{
+		cout << "move5()" << endl;
+		random_device rd("default");
+		mt19937 gen{rd()};
+		
+		double mean = 1.5, std_dev = .3;
+		normal_distribution<double> AR_distribution{mean, std_dev};
+		double new_AR = AR_distribution(gen);
+
+		if(new_AR < 0) new_AR = 1;
+
+		if(rand()%2 == 0)
+			new_AR = 1 / new_AR;
+
+		//apply the new AR to a random kernel
+		blocks[rand()%blocks.size()]->changeShapeToAR(new_AR);
+			
+		move4();
+	} //end move5()
+
+
 	void updatePreviousOpsCount()
 	{
 		for(int i = 1; i < ops.size(); i++)	
@@ -310,15 +410,17 @@ class Slicing_Annealer
 	void acceptMove(double new_cost)
 	{
 		cout << "acceptMove()\n";
-		best_layout = layout;
+		best_layout = new auto(*layout);
 		best_blocks = blocks;
 		best_ops = ops;
 		best_cost = new_cost;
+		findBestArea();
 	}
 
 	void rejectMove()
 	{
 		cout << "rejectMove()\n";
+		layout = new auto(*best_layout);
 		blocks = best_blocks;
 		ops = best_ops;
 	}
@@ -333,6 +435,7 @@ class Slicing_Annealer
 		//combine all blocks based on the ops chain
 		for(int i = 0; i < blocks.size(); i++)
 		{
+			blocks[i]->computePerformance();
 			//put the next cell in a wrapper, then on the stack
 			block_stack.push(new Block_Wrapper<Block>(blocks[i]));
 
@@ -360,38 +463,86 @@ class Slicing_Annealer
 		findBestArea();
 		layout->updateDimensions();	
 	}
-	
-	double costFunction()
+
+	double computeTotalWirelength()
 	{
-		//compute wire distance cost
-		layout->updateDimensions(); //must set x and y coordinates of each block before estimating wirelen!
-		int wirelen= 0;
+		double wirelen = 0;
 
 		for(Block* b : blocks)
 			wirelen += b->computeWirelength();
+
+		return wirelen;
+	}
+
+	//compute a cost function to be used in the annealing process
+	double costFunction()
+	{
+		//weights
+		double alpha = 3.0;
+
+		//compute wire distance cost
+		layout->updateDimensions(); //must set x and y coordinates of each block before estimating wirelen!
+		int wirelen = computeTotalWirelength();;
 
 		int longest_time = getLongestTime();
 
 		cout << "Wirelength: " << wirelen << "*" << wirepenalty << " = "<< wirelen*wirepenalty << endl;
 		cout << "Longest Time: " << longest_time << endl;
-		double cost = getLongestTime() + wirelen*wirepenalty + layout->getArea();
-		//double cost = getLongestTime() + wirelen*wirepenalty;
-		//impose a penalty for shapes that aren't square
-		cost *= max(layout->getWidth()/layout->getHeight(),layout->getHeight()/layout->getWidth());
+//		double cost = longest_time + wirelen*wirepenalty + alpha*layout->getArea();
+		double cost = getLongestTime() + wirelen*wirepenalty;
+		//impose a penalty for shapes that aren't within the allowed area! 
+		cost *= max(1.0, pow(layout->getWidth() / max_width, 3));
+		cost *= max(1.0, pow(layout->getHeight() / max_height, 3));
 
 		cout << "Total cost: " << cost << endl;
 		return cost;
 	}
 
+	//only count the wirelength and longest kernel time.
+	//NOT USED FOR ANNEALING PROCESS
+	double WSEcostFunction()
+	{
+		layout->updateDimensions(); //must set x and y coordinates of each block before estimating wirelen!
+		int wirelen = computeTotalWirelength();;
+
+		int longest_time = getLongestTime();
+
+		double cost = longest_time + wirelen*wirepenalty;
+
+		cout << "WSE competition cost: " << cost << endl;
+		return cost;
+	}
+	
 	int getLongestTime()
 	{
-		int longest_time = 0;
-		for(int i = 0; i < blocks.size(); i++)
-			if(blocks[i]->getTime() > longest_time)
-				longest_time = blocks[i]->getTime();
-		return longest_time;
+		return getLongestBlock()->getTime();
 	}
 
+	Block* getLongestBlock()
+	{
+		int longest_time = 0;
+		Block* b;
+		for(int i = 0; i < blocks.size(); i++)
+			if(blocks[i]->getTime() > longest_time)
+			{
+				b = blocks[i];
+				longest_time = b->getTime();
+			}
+		return b;
+	}
+
+	Block* getShortestBlock()
+	{
+		Block* b = blocks[0];
+		int shortest_time = b->getTime();
+		for(int i = 0; i < blocks.size(); i++)
+			if(blocks[i]->getTime() < shortest_time)
+			{
+				b = blocks[i];
+				shortest_time = b->getTime();
+			}
+		return b;
+	}
 
 }; //end Slicing_Annealer
 
