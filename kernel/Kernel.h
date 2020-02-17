@@ -238,6 +238,8 @@ public:
 
 	int computeMemory() { return -1; }
 
+	int computeWirelength() { return computeL1Distance(); }
+
 	//finds the L1 Distance to the next_kernel
 	//assumes the width and height are up to date
 	int computeL1Distance()

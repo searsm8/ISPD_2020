@@ -50,37 +50,39 @@ int main(int argc, char** argv)
 
 	//placer.printKernels();
 	//placer.printInfo();
-	cout << "avg_time: " << placer.computeAvgTime() << endl;
-	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual();
+//	cout << "avg_time: " << placer.computeAvgTime() << endl;
+//	cout << "max_time: " << placer.getMaxTime() << endl;
+//	placer.updateVisual();
 
 //	placer.equalizeKernelTimes();
-	cout << "avg_time: " << placer.computeAvgTime() << endl;
-	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual(); 
+//	cout << "avg_time: " << placer.computeAvgTime() << endl;
+//	cout << "max_time: " << placer.getMaxTime() << endl;
+//	placer.updateVisual(); 
 
 	placer.enforceMemoryConstraint();
 	placer.updateVisual(); 
 
 	placer.maximizeKernelSize(0.6);
-	placer.printKernels();
-	placer.achievePreciseAR(0.01);
-	cout << "avg_time: " << placer.computeAvgTime() << endl;
-	cout << "max_time: " << placer.getMaxTime() << endl;
+//	placer.printKernels();
+//	placer.achievePreciseAR(0.01);
+//	cout << "avg_time: " << placer.computeAvgTime() << endl;
+//	cout << "max_time: " << placer.getMaxTime() << endl;
 	placer.updateVisual(); 
-	placer.printARs();
+//	placer.printARs();
 
 	placer.fitKernelsToWafer();
 	placer.updateVisual(); 
 
-	placer.printTimeAndArea();
-	placer.updateVisual(); 
-	placer.changeAllAR(2.0);
-	placer.printTimeAndArea();
-	placer.updateVisual(); 
+	placer.performAnnealing();
 
-	placer.fitKernelsToWafer();
-	placer.updateVisual(); 
+//	placer.printTimeAndArea();
+//	placer.updateVisual(); 
+//	placer.changeAllAR(2.0);
+//	placer.printTimeAndArea();
+//	placer.updateVisual(); 
+//
+//	placer.fitKernelsToWafer();
+//	placer.updateVisual(); 
 
 	return 1;
 }

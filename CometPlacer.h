@@ -56,7 +56,7 @@ public:
 
 	//constructor
 	CometPlacer(string kgraph_filename, string output, int wirepenalty, int timelimit, int width, int height)
-	: output(output), wirepenalty(wirepenalty), timelimit(timelimit), width(width), height(height), iteration(0), avg_time(0)
+	: output(output), wirepenalty(wirepenalty), timelimit(timelimit), width(width), height(height), iteration(0), avg_time(0), annealer(wirepenalty, width, height)
 	{
 		//read the input file and populate the kernels
 		readKgraph(kgraph_filename);	
@@ -260,23 +260,21 @@ public:
 
 
 	//visualize the kernels on the WSE
-	void updateVisual()
+	void updateVisual(bool wait_for_anykey=false)
 	{
 #ifdef VISUALIZE
 		for(int i = 0; i < kernels.size(); i++)
-		{
 			kernels[i]->updateXY();
-		}
 
 		updateWSE(window, kernels, iteration);
+		if(!wait_for_anykey) return;
+
 		//wait for any key to be pressed
+		cout << "\nPress any key to continue...\n";
 		SDL_Event event;
 		while( SDL_WaitEvent(&event) )
-		{
 			if(event.type == SDL_KEYDOWN)
 				break;
-				
-		}
 #endif
 		return;
 	}
@@ -675,7 +673,6 @@ public:
 				cout << "NO MORE ROOM FOR KERNELS!!!\n";
 			}
 			
-			updateVisual();
 			cout << "Placed kernel: " << next->getName() << endl;
 			cout << "(row = " << row << ", next_row = " << next_row << ")\n";
 
@@ -684,6 +681,7 @@ public:
 		}
 		
 		cout << "\n***END fitKernelsToWafer()***\n";
+		cout << "Total Wire Penalty: " << computeL1Penalty() << endl;
 	} //end fitKernelsToWafer()
 
 	void decreaseBlocks()
@@ -706,11 +704,27 @@ public:
 		}
 	}
 
+	//use Slicing_Annealer object to perform Simulated annealing on the kernels
 	void performAnnealing()
 	{
 		annealer.setBlocks(kernels);
-		annealer.initializeOps();
 		annealer.initializeTemp();
+		annealer.initializeOps();
+
+		//annealer.performAnnealing();
+		for(int i = 0; i < 10; i++)
+		{
+			for(int i = 0; i < 100; i++)
+			{
+				for(int i = 0; i < 1000; i++)
+				{
+					annealer.performAnnealingStep();
+				}
+				annealer.reduceTemp();
+				updateVisual();
+			}
+				updateVisual(true);
+		}
 	}
 
 
