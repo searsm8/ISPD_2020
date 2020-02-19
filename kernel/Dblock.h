@@ -148,6 +148,16 @@ public:
 		return params;
 	}
 
+	void setRotation(int new_rot)
+	{
+		cout << "Dblock setRotation("<< new_rot << ")\n";
+		Kernel::setRotation(new_rot);
+		for(int i = 0; i < convs.size(); i++)
+			convs[i].setRotation(new_rot);
+
+		updateXY();
+	}
+
 	//set the X coordinate for this Kernel
 	//update the X for all internel Conv blocks
 	void setX(int new_X)
@@ -165,19 +175,39 @@ public:
 	void updateX()
 	{
 		int new_X = x;
-		convs[0].x = new_X;
-		new_X += convs[0].width;
-		convs[1].x = new_X;
-		new_X += convs[1].width;
-		convs[2].x = new_X;
+		if(rotation == 0)
+		{
+			convs[0].x = new_X;
+			new_X += convs[0].width;
+			convs[1].x = new_X;
+			new_X += convs[1].width;
+			convs[2].x = new_X;
+		}
+		else
+		{
+			convs[0].x = new_X;
+			convs[1].x = new_X;
+			convs[2].x = new_X;
+		}
 	}
 
 	void updateY()
 	{
 		int new_Y = y;
-		convs[0].y = new_Y;
-		convs[1].y = new_Y;
-		convs[2].y = new_Y;
+		if(rotation == 0)
+		{
+			convs[0].y = new_Y;
+			convs[1].y = new_Y;
+			convs[2].y = new_Y;
+		}
+		else
+		{
+			convs[0].y = new_Y;
+			new_Y += convs[0].width;
+			convs[1].y = new_Y;
+			new_Y += convs[1].width;
+			convs[2].y = new_Y;
+		}
 	}
 
 	void updateXY()
@@ -192,9 +222,18 @@ public:
 	vector<vector<int>> getRectangles()
 	{
 		vector<vector<int>> rects;
-		rects.push_back(vector<int>{ convs[0].x, convs[0].y, convs[0].width, convs[0].height});
-		rects.push_back(vector<int>{ convs[1].x, convs[1].y, convs[1].width, convs[1].height});
-		rects.push_back(vector<int>{ convs[2].x, convs[2].y, convs[2].width, convs[2].height});
+		if(rotation == 0)
+		{
+			rects.push_back(vector<int>{ convs[0].x, convs[0].y, convs[0].width, convs[0].height});
+			rects.push_back(vector<int>{ convs[1].x, convs[1].y, convs[1].width, convs[1].height});
+			rects.push_back(vector<int>{ convs[2].x, convs[2].y, convs[2].width, convs[2].height});
+		}
+		else
+		{
+			rects.push_back(vector<int>{ convs[0].x, convs[0].y, convs[0].height, convs[0].width});
+			rects.push_back(vector<int>{ convs[1].x, convs[1].y, convs[1].height, convs[1].width});
+			rects.push_back(vector<int>{ convs[2].x, convs[2].y, convs[2].height, convs[2].width});
+		}
 		return rects;
 	}
 

@@ -74,23 +74,21 @@ void drawRect(SDL_Renderer* renderer, vector<int> rect)
 //draw a line representing the connection between two kernels
 void drawConnection(SDL_Renderer* renderer, Kernel* k)
 {
-	int x1, y1, x2, y2;
 	for(int i = 0; i < k->getNextKernels().size(); i++)
 	{
 	Kernel* next = k->getNextKernels()[i];
 	if(next == NULL) break;
-	x1 = k->getX() + k->getWidth()/2;
-	y1 = k->getY() + k->getHeight()/2;
-	x2 = next->getX() + next->getWidth()/2;
-	y2 = next->getY() + next->getHeight()/2;
+
+	pair<double, double> c1 = k->getCenter();
+	pair<double, double> c2 = next->getCenter();
 	
 	//draw the connecting line
-	SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+	SDL_RenderDrawLine(renderer, c1.first, c1.second, c2.first, c2.second);
 
 	//draw small squares at each endpoint
 	SDL_Rect r;
-	r.x = x1;
-	r.y = y1;
+	r.x = c1.first;
+	r.y = c1.second;
 	r.w = 3;
 	r.h = 3;
 

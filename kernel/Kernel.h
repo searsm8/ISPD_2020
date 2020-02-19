@@ -27,13 +27,17 @@ public:
 
 	int x, y, rotation, ID;
 	int height, width, time, memory;
-	double targetAR; //target Aspect Ratio which the kernel will try to achieve
+	double target_AR; //target Aspect Ratio which the kernel will try to achieve
 		//Aspect Ratio defined as: height/width
+	double target_time;
 
 	string name;
 
 	map<string, int> FP; //Formal parameters. Should not be changed.
 	map<string, int> EP; //Execution parameters
+
+	vector<Kernel*> possible_kernels; //alternative kernels
+	int shape_index;
 
 	vector<Kernel*> next_kernels; //pointers to the next kernels in the pipeline
 	Kernel* prev_kernel;
@@ -46,7 +50,7 @@ public:
 		rotation = 0;
 		ID = kernel_count++;
 		name = "Kernel " + to_string(ID);
-		targetAR = 1;
+		target_AR = 1;
 	}
 
 	virtual void printParameters()
@@ -62,7 +66,7 @@ public:
 		cout << "\nExecution Parameters: ";
 		for(itr = EP.begin(); itr != EP.end(); ++itr)
 			cout << itr->first << "=" << itr->second <<  " ";
-		cout << "targetAR: " << targetAR << endl;	
+		cout << "target_AR: " << target_AR << endl;	
 		cout << endl << endl;	
 	}	
 
@@ -104,8 +108,29 @@ public:
 	int getArea() { return width*height; }
 
 	int getTime() { return time; }
+	
+	int getTargetTime() { return target_time; }
 
 	int getMemory() { return memory; }
+
+	//return a pair (x, y) specifying the center of this Kernel
+	pair<double, double> getCenter()
+	{
+		pair<double, double > center;
+
+		if(rotation == 0)
+		{
+			center.first = x + width/2;
+			center.second= y + height/2;
+		}
+		else
+		{
+			center.first = x + height/2;
+			center.second= y + width/2;
+		}
+
+		return center;
+	}
 
 	//return doubles so that division math is correct!
 	double getFP(string key) { return FP[key]; }
@@ -116,7 +141,7 @@ public:
 
 	double getAR() { return (double)((double)height / (double)width); }
 
-	double getTargetAR() { return targetAR; }
+	double getTargetAR() { return target_AR; }
 
 	//getRectangles gives an array of ints to help draw the kernel
 	//each row in the returned array is one rectangle
@@ -141,20 +166,70 @@ public:
 
 	void setBottom(int bottom) { y = bottom - height; } 
 
+	virtual void setRotation(int new_rot) { rotation = new_rot; } 
+	
+	void rotate() { if(rotation == 0) setRotation(90); else setRotation(0); }
+
 	void addNextKernel(Kernel* next) { next_kernels.push_back(next); }
 
 	void setPrevKernel(Kernel* prev) { prev_kernel = prev; }
 
 	void setName(string new_name) { name = new_name; }
 
-	void setAR(double new_AR) { targetAR = new_AR; }
+	void setAR(double new_AR) { target_AR = new_AR; }
+
+	void setTime(double new_time) { target_time = new_time; }
+
+	//fill in possible_kernels
+	void computePossibleShapes()
+	{
+		cout << "computePossibleShapes()\n";
+
+		vector<double> target_ARs = {0.25, 0.33, 0.5, 1, 2, 3, 4}; 
+
+		setTime(getTime());
+
+		for( int i = 0; i < target_ARs.size(); i++)
+		{
+			changeShapeToAR(target_ARs[i]);
+		
+			//add current EPs to possible_EPs
+			possible_kernels.push_back(createCopy());
+		}
+
+		//set to first shape
+		shape_index = 0;
+		//setShape(0);
+	}
+
+	void setShape(int index)
+	{
+		cout << "setShape(" << index << ")" <<endl;
+		copyDataFrom(possible_kernels[index]);
+		computePerformance();
+		cout << "AR: " << getAR() << endl;
+		cout << "target_AR: " << getTargetAR() << endl;
+		cout << "Time: " << getTime()<< endl;;
+		cout << "Area: " << getArea()<< endl;;
+	}
+
+	void nextShape()
+	{
+		cout << "nextShape()\n";
+		cout << "possible_kernels.size(): " << possible_kernels.size() << endl;
+		setShape(shape_index);
+
+		shape_index++;
+		if(shape_index == possible_kernels.size())
+			shape_index = 0;
+	}
 
 	//change the shape of the kernel to achieve the new target AR
 	void changeShapeToAR(double new_AR)
 	{
-		targetAR = new_AR;
+		target_AR = new_AR;
 
-		int orig_area = getArea();
+		int orig_time = getTargetTime();
 
 		//change the shape repeatedly by increasing and decreasing
 		//stop when the target AR is achieved or surpassed.
@@ -177,7 +252,7 @@ public:
 					break;
 			}
 					
-			if(getArea() < orig_area)
+			if(getTime() > orig_time)
 			{
 				if(!increaseSize())
 					break;
@@ -191,15 +266,16 @@ public:
 		
 		computePerformance();
 		//try to get back to the original area
-		cout << "getArea(): " << getArea() << "\torig_area: " << orig_area << endl;
-		while(getArea() < orig_area) 
+		while(getTime() < orig_time) 
 		{
-			increaseSize();	
+			if(!decreaseSize())
+				break;
 			computePerformance();
 		}
-		while(getArea() > orig_area) 
+		while(getTime() > orig_time) 
 		{
-			decreaseSize();	
+			if(!increaseSize())
+				break;
 			computePerformance();
 		}
 	}
@@ -337,11 +413,17 @@ public:
 		return new Kernel(*this);
 	}
 
-	//copy all relevant data members into this Kernel
+	//copy ONLY relevant data members into this Kernel
 	virtual void copyDataFrom(Kernel* k)
 	{
 		cout << "Kernel copyDataFrom()\n";
-		*this = Kernel(*k);
+
+		x = k->x;
+		y = k->y;
+		rotation = k->rotation;
+		target_AR = k->target_AR;
+		FP = k->FP;
+		EP = k->EP;
 	}
 
 

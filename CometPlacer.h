@@ -77,7 +77,7 @@ public:
 			if(rand()%2 == 0)
 				new_AR = 1 / new_AR;
 
-//			new_AR=2;
+			new_AR=.25;
 
 			kernels[i]->setAR(new_AR);
 			cout << kernels[i]->getName() << " AR: " << new_AR << endl;
@@ -757,6 +757,22 @@ public:
 		updateVisual(true);
 
 	}
+
+	void computePossibleShapes()
+	{
+		for(int i = 0; i < kernels.size(); i++)
+		{
+			kernels[i]->computePossibleShapes();
+		}
+	}
+
+	void cycleShape(int index)
+	{
+		Kernel* k = kernels[index];
+
+		k->nextShape();
+	}
+
 };
 
 #endif
