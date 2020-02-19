@@ -44,6 +44,8 @@ int main(int argc, char** argv)
 	CometPlacer placer = CometPlacer(kgraph, output, wirepenalty, timelimit, width, height);
 
 
+	//placer.tryShapes();
+
 	placer.updateVisual();
 	placer.printTimeAndArea();
 	placer.printKernels();
@@ -67,11 +69,11 @@ int main(int argc, char** argv)
 //	placer.achievePreciseAR(0.01);
 //	cout << "avg_time: " << placer.computeAvgTime() << endl;
 //	cout << "max_time: " << placer.getMaxTime() << endl;
-	placer.updateVisual(); 
+//	placer.updateVisual(); 
 //	placer.printARs();
 
-	placer.fitKernelsToWafer();
-	placer.updateVisual(); 
+//	placer.fitKernelsToWafer();
+//	placer.updateVisual(); 
 
 	placer.performAnnealing();
 

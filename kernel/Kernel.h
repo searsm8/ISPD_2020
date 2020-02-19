@@ -21,7 +21,7 @@ using namespace std;
 class Kernel
 {
 private:
-	bool print = false;
+	bool print = true;
 public:
 	static int kernel_count;
 
@@ -35,7 +35,7 @@ public:
 	map<string, int> FP; //Formal parameters. Should not be changed.
 	map<string, int> EP; //Execution parameters
 
-	Kernel* next_kernel; //pointer to the next kernel in the pipeline
+	vector<Kernel*> next_kernels; //pointers to the next kernels in the pipeline
 	Kernel* prev_kernel;
 
 	//constructors
@@ -49,7 +49,7 @@ public:
 		targetAR = 1;
 	}
 
-	void printParameters()
+	virtual void printParameters()
 	{
 		if(!print) return;
 		cout << "\nKernel " << ID << " at (" << x << ", " << y << ", R" << rotation << ")\n";
@@ -62,7 +62,7 @@ public:
 		cout << "\nExecution Parameters: ";
 		for(itr = EP.begin(); itr != EP.end(); ++itr)
 			cout << itr->first << "=" << itr->second <<  " ";
-			
+		cout << "targetAR: " << targetAR << endl;	
 		cout << endl << endl;	
 	}	
 
@@ -112,7 +112,7 @@ public:
 
 	double getEP(string key) { return EP[key]; }
 
-	Kernel* getNextKernel() { return next_kernel; }
+	vector<Kernel*> getNextKernels() { return next_kernels; }
 
 	double getAR() { return (double)((double)height / (double)width); }
 
@@ -141,7 +141,7 @@ public:
 
 	void setBottom(int bottom) { y = bottom - height; } 
 
-	void setNextKernel(Kernel* next) { next_kernel = next; }
+	void addNextKernel(Kernel* next) { next_kernels.push_back(next); }
 
 	void setPrevKernel(Kernel* prev) { prev_kernel = prev; }
 
@@ -188,7 +188,20 @@ public:
 			computePerformance();
 //			cout <<"AFTER MOVE: Target AR: "<<getTargetAR()<<" Actual AR: " << getAR() << endl;
 		}
-
+		
+		computePerformance();
+		//try to get back to the original area
+		cout << "getArea(): " << getArea() << "\torig_area: " << orig_area << endl;
+		while(getArea() < orig_area) 
+		{
+			increaseSize();	
+			computePerformance();
+		}
+		while(getArea() > orig_area) 
+		{
+			decreaseSize();	
+			computePerformance();
+		}
 	}
 
 	virtual void updateXY()
@@ -217,9 +230,17 @@ public:
 	{
 		//don't increase an EP beyond the FP!!! it gains no time because ceil()
 		if(getAR() < getTargetAR())
-			return changeHeight(true);
+		{
+			if(changeHeight(true))
+				return true;
+			else return false; 
+		}
 		else
-			return changeWidth(true);
+		{
+			if(changeWidth(true))
+				return true;
+			else return changeHeight(true);
+		}
 	}
 
 	//decrease the size of the kernel based on the target AR
@@ -237,7 +258,7 @@ public:
 	virtual bool changeHeight(bool increase) { return true; }
 	
 //COMPUTATORS
-	int computeHeight() { return -1; }
+	int computeHeight() { cout << "-1\n";  return -1; }
 
 	int computeWidth() { return -1; }
 
@@ -249,14 +270,15 @@ public:
 
 	//finds the L1 Distance to the next_kernel
 	//assumes the width and height are up to date
-	int computeL1Distance()
+	double computeL1Distance()
 	{
-		if(next_kernel == NULL) return 0;
-
-		else return abs((next_kernel->getX()+next_kernel->getWidth()/2)
+		double dist = 0;
+		for(int i = 0; i < next_kernels.size(); i++)
+	       	dist += abs((next_kernels[i]->getX()+next_kernels[i]->getWidth()/2)
 			- (this->getX()+this->getWidth()/2) )
-			+ abs((next_kernel->getY()+next_kernel->getHeight()/2)
+			+ abs((next_kernels[i]->getY()+next_kernels[i]->getHeight()/2)
 			- (this->getY()+this->getHeight()/2) );
+		return dist;
 
 	}
 
@@ -307,6 +329,19 @@ public:
 	virtual double computeNetBenefitOfIncreasing(string EP_key)
 	{
 		return -1;
+	}
+
+	virtual Kernel* createCopy()
+	{
+		cout << "createCopy() Kernel:\n";
+		return new Kernel(*this);
+	}
+
+	//copy all relevant data members into this Kernel
+	virtual void copyDataFrom(Kernel* k)
+	{
+		cout << "Kernel copyDataFrom()\n";
+		*this = Kernel(*k);
 	}
 
 

@@ -161,7 +161,7 @@ public:
 		}
 
 		//set the connection
-		k1->setNextKernel(k2);
+		k1->addNextKernel(k2);
 		k2->setPrevKernel(k1);
 	}	
 
@@ -603,7 +603,7 @@ public:
 	void fitKernelsToWafer()
 	{
 		Kernel* k = head;
-		Kernel* next = k->getNextKernel();
+		Kernel* next = k->getNextKernels()[0];
 		int row = 0;
 		int next_row = k->getBottom();
 		bool going_right = true; 
@@ -666,7 +666,7 @@ public:
 			cout << "(row = " << row << ", next_row = " << next_row << ")\n";
 
 			k = next;
-		       	next = next->getNextKernel();
+		       	next = next->getNextKernels()[0];
 		}
 		
 		cout << "\n***END fitKernelsToWafer()***\n";
@@ -698,36 +698,65 @@ public:
 	{
 		annealer.setBlocks(kernels);
 		annealer.initializeOps();
-
-		annealer.WSEcostFunction();
-		updateVisual(true);
-
 		annealer.initializeTemp();
 		updateVisual(true);
 
 		//annealer.performAnnealing();
-		for(int i = 0; i < 20; i++)
+		for(int i = 0; i < 9; i++)
 		{
 			for(int i = 0; i < 10; i++)
 			{
-				for(int i = 0; i < 100; i++)
+				for(int i = 0; i < 500; i++)
 				{
 					annealer.performAnnealingStep();
-
+					printTimeAndArea();
 				}
 				annealer.reduceTemp();
+				kernels = annealer.getBlocks();
 				updateVisual();
 				if(annealer.getTemp() < 1)
 					break;
 			}
-				printTimeAndArea();
-				annealer.WSEcostFunction();
-				updateVisual(true);
-				if(annealer.getTemp() < 1)
-					return;
+			printTimeAndArea();
+			annealer.WSEcostFunction();
+			updateVisual(true);
+			if(annealer.getTemp() < 1)
+				return;
 		}
 	}
 
+	void tryShapes()
+	{
+		Kernel* k = kernels[0];
+		k->setAR(.33);
+
+		for(int i = 0; i < 35; i++)
+		{
+			k->increaseSize();
+			k->computePerformance();
+		}
+
+		k->changeShapeToAR(.33);	
+		k->computePerformance();
+		cout << k->getName() << "\tArea: " << k->getArea() << "\tTarget AR: " << k->getTargetAR() << "\tActual AR: " << k->getAR() << "\tTime: " << k->getTime() << endl;
+		updateVisual(true);
+
+		k->changeShapeToAR(.66);	
+		k->computePerformance();
+		cout << k->getName() << "\tArea: " << k->getArea() << "\tTarget AR: " << k->getTargetAR() << "\tActual AR: " << k->getAR() << "\tTime: " << k->getTime() << endl;
+		updateVisual(true);
+
+		k->changeShapeToAR(1);	
+		k->computePerformance();
+		cout << k->getName() << "\tArea: " << k->getArea() << "\tTarget AR: " << k->getTargetAR() << "\tActual AR: " << k->getAR() << "\tTime: " << k->getTime() << endl;
+		updateVisual(true);
+
+		k->changeShapeToAR(1.5);	
+		k->computePerformance();
+		cout << k->getName() << "\tArea: " << k->getArea() << "\tTarget AR: " << k->getTargetAR() << "\tActual AR: " << k->getAR() << "\tTime: " << k->getTime() << endl;
+		updateVisual(true);
+
+	}
 };
 
 #endif

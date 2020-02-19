@@ -209,11 +209,19 @@ public:
 
 //PRINT METHODS
 
+
 	void printPerformance()
 	{
 		Kernel::printPerformance();
 		for(int i = 0; i < convs.size(); i++)
 			convs[i].printPerformance();
+	}
+	
+	void printParameters()
+	{
+		Kernel::printParameters();
+		for(int i = 0; i < convs.size(); i++)
+			convs[i].printParameters();
 	}
 
 	double computeNetBenefitOfIncreasing(string EP_key)
@@ -324,6 +332,26 @@ public:
 
 		return success;
 	}
+
+	Kernel* createCopy()
+	{
+		cout << "createCopy() Dblock:\n";
+		cout << "Original: " << this << endl;
+
+		Dblock* newBlock = new Dblock(*this);
+		cout << "New Dblock: " << newBlock << endl;
+		
+		return newBlock;
+	}
+
+	void copyDataFrom(Kernel* k)
+	{
+		cout << "Dblock copyDataFrom()\n";
+		Kernel::copyDataFrom(k);
+		this->convs = dynamic_cast<Dblock*>(k)->convs;
+
+	}
+
 
 };
 #endif

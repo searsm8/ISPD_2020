@@ -198,8 +198,8 @@ public:
 
 //		cout << "getNextEPValue("<<EP_key<<", "<<increase<<") from " << orig_EP << " to " << new_EP << endl;
 
-		//don't increase all the way to FP!
-		if(increase && new_EP >= my_FP) 
+		//don't increase beyond FP!
+		if(increase && new_EP > my_FP) 
 			return orig_EP;
 
 		return new_EP;

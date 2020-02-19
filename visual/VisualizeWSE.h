@@ -74,14 +74,15 @@ void drawRect(SDL_Renderer* renderer, vector<int> rect)
 //draw a line representing the connection between two kernels
 void drawConnection(SDL_Renderer* renderer, Kernel* k)
 {
-	Kernel* next = k->getNextKernel();
-	if(next == NULL) return;
-
-
-	int x1 = k->getX() + k->getWidth()/2;
-	int y1 = k->getY() + k->getHeight()/2;
-	int x2 = next->getX() + next->getWidth()/2;
-	int y2 = next->getY() + next->getHeight()/2;
+	int x1, y1, x2, y2;
+	for(int i = 0; i < k->getNextKernels().size(); i++)
+	{
+	Kernel* next = k->getNextKernels()[i];
+	if(next == NULL) break;
+	x1 = k->getX() + k->getWidth()/2;
+	y1 = k->getY() + k->getHeight()/2;
+	x2 = next->getX() + next->getWidth()/2;
+	y2 = next->getY() + next->getHeight()/2;
 	
 	//draw the connecting line
 	SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
@@ -93,11 +94,13 @@ void drawConnection(SDL_Renderer* renderer, Kernel* k)
 	r.w = 3;
 	r.h = 3;
 
-    // Set render color to white fill 
-    SDL_SetRenderDrawColor( renderer, 0,0,0,255);
-    SDL_RenderFillRect( renderer, &r );
+	// Set render color to white fill 
+	SDL_SetRenderDrawColor( renderer, 0,0,0,255);
+	SDL_RenderFillRect( renderer, &r );
+	}
 
 }
+
 
 
 void updateWSE(SDL_Window* window, vector<Kernel*> kernels_to_draw, int iteration=-1)

@@ -45,6 +45,7 @@ private:
 	vector<Block*> best_blocks;
 	vector<string> best_ops;
 	vector<int> previous_ops_count;
+	vector< vector<int> > next_block_indices;
 
 
 public:
@@ -56,18 +57,21 @@ public:
 	Slicing_Annealer(int init_wirepenalty, int init_width, int init_height) 
 	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height)
 	{
-		move_weights = {70, 20, 10, 50, 0}; //determines how often each type of move is done
+		move_weights = {70, 20, 10, 40, 0}; //determines how often each type of move is done
 	}
 
 
 //ACCESSORS
 	double getTemp() { return temp; }
 
+	vector<Block*> getBlocks() { return blocks; }
+
 //MODIFIERS
 	
 	void setBlocks(vector<Block*> new_blocks)
 	{
 		blocks = new_blocks;
+		//best_blocks = new_blocks;
 	}
 
 //PRINT FUNCTIONS
@@ -83,6 +87,30 @@ public:
 	}
 
 //ANNEALING FUNCTIONS
+
+	//initial op strings can be all random, or uniform
+	void initializeOps()
+	{
+		ops.push_back(""); //first op must always be empty
+
+		for(int i = 1; i < blocks.size(); i++)
+			ops.push_back("h");
+
+		while(previous_ops_count.size() < ops.size())
+			previous_ops_count.push_back(0);
+		layout = findBestLayout();
+		best_layout = layout;
+		cout << "blocks.size() = " << blocks.size() << endl;
+		cout << "ops.size() = " << ops.size() << endl;
+			
+		for(int i = 0; i < blocks.size(); i++)
+		{
+			best_blocks.push_back(blocks[i]->createCopy());
+			best_ops.push_back(ops[i]);
+		}
+		best_cost = costFunction();
+	}
+
 
 	//initial temperature should be high enough such that bad moves 
 	//which are 3 std dev should be accepted with high probability
@@ -105,7 +133,7 @@ public:
 		{
 			performMove(); //random move at very high temp
 			
-			findBestArea();
+			layout = findBestLayout();
 					
 			new_cost = costFunction();
 		
@@ -117,32 +145,15 @@ public:
 		
 		double std_dev = StandardDeviation(deltas);
 			
-		float start_temp = 30*std_dev; //for a temperature of 30*std_dev,
+		temp = 30*std_dev; //for a temperature of 30*std_dev,
 				//there will be a 90% chance to accept a very bad change of 3*std_dev
-		printf("Starting Temp: %.3f\n", start_temp);
+		printf("Starting Temp: %.3f\n", temp);
 		
 		//initialize alpha and beta based on the current area and wirelength
 		//initializeWeights(best_layout);
 			
-		return start_temp;
-	}
-
-	//initial op strings can be all random, or uniform
-	void initializeOps()
-	{
-		ops.push_back(""); //first op must always be empty
-
-		for(int i = 1; i < blocks.size(); i++)
-			ops.push_back("h");
-
-		while(previous_ops_count.size() < ops.size())
-			previous_ops_count.push_back(0);
-
-		findBestArea();
-		best_layout = new auto(*layout);
-		best_blocks = blocks;
-		best_ops = ops;
-		best_cost = costFunction();
+		temp = 10000;
+		return temp;
 	}
 
 	void performAnnealing()
@@ -297,15 +308,21 @@ public:
 	{
 		cout << "move4()" << endl;
 		//if(computeTotalWirelength() * wirepenalty < getLongestTime())
-//		if(rand()%2 == 0)
-		if(true)
+		if(rand()%2 == 0)
+//		if(true)
 		{
 //			Block* b = getLongestBlock();
 			for(int i = 0; i < blocks.size(); i++)
 			{
-				Block* b = getLongestBlock();;
-				b->increaseSize();
+				Block* b = getLongestBlock();
+				cout << "Increasing Block: " << b->getName() << endl;
+				b->printPerformance();
+				if(b->increaseSize())
+					cout << "size increased!\n";
+				else cout << "could NOT increase size!\n";
 				b->computePerformance();
+				b->printPerformance();
+				b->printParameters();
 			}
 		}
 		else
@@ -341,7 +358,6 @@ public:
 		//apply the new AR to a random kernel
 		blocks[rand()%blocks.size()]->changeShapeToAR(new_AR);
 			
-		move4();
 	} //end move5()
 
 
@@ -361,8 +377,7 @@ public:
 	//return true if a move was made
 	bool evaluateMove()
 	{
-		//Block_Wrapper* new_layout = 
-		findBestArea();	
+		layout = findBestLayout();	
 
 		cout << "Layout dims: (" << layout->getWidth() <<", " << layout->getHeight() << ")" <<endl;
 		cout << "Layout Area: " << layout->getArea() << endl;
@@ -410,25 +425,32 @@ public:
 	void acceptMove(double new_cost)
 	{
 		cout << "acceptMove()\n";
-		best_layout = new auto(*layout);
-		best_blocks = blocks;
-		best_ops = ops;
+		for(int i = 0; i < blocks.size(); i++)
+		{
+			best_blocks[i]->copyDataFrom(blocks[i]);
+			best_ops[i] = ops[i];
+		}
 		best_cost = new_cost;
-		findBestArea();
 	}
 
 	void rejectMove()
 	{
 		cout << "rejectMove()\n";
-		layout = new auto(*best_layout);
-		blocks = best_blocks;
-		ops = best_ops;
+		for(int i = 0; i < best_blocks.size(); i++)
+		{
+			blocks[i]->copyDataFrom(best_blocks[i]);
+			ops[i] = best_ops[i];
+		}
+		cout << "Reset Vectors.\n";
+
+		layout = findBestLayout();
 	}
 
 	//using the ops slicing string, combine blocks until a full layout is achieved
 	//finds the minimum possible area given the blocks and ops string
-	void findBestArea()
+	Block_Wrapper<Block>* findBestLayout()
 	{
+
 		//use a stack to read the layout string
 		stack<Block_Wrapper<Block>*> block_stack;
 
@@ -454,13 +476,13 @@ public:
 		 	}
 		}
 
-		layout = block_stack.top();
+		return block_stack.top();
 
 	}
 
 	void updateBlocks()
 	{
-		findBestArea();
+	//	findBestLayout();
 		layout->updateDimensions();	
 	}
 
@@ -494,7 +516,7 @@ public:
 		cost *= max(1.0, pow(layout->getWidth() / max_width, 3));
 		cost *= max(1.0, pow(layout->getHeight() / max_height, 3));
 
-		cout << "Total cost: " << cost << endl;
+		cout << "Total cost: " << cost << " (Best Cost: " << best_cost << ")" <<  endl;
 		return cost;
 	}
 
