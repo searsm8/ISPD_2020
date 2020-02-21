@@ -65,13 +65,15 @@ int main(int argc, char** argv)
 	placer.updateVisual(true); 
 	placer.maximizeKernelSize(0.6);
 	placer.updateVisual(true); 
-	placer.computePossibleShapes();
-	placer.updateVisual(true); 
-	for(int i = 0; i < 7; i++)
-	{
-		placer.cycleShape(0);
-		placer.updateVisual(true); 
-	}
+//	placer.updateVisual(true); 
+//	placer.computePossibleShapes();
+//	placer.updateVisual(true); 
+//	for(int i = 0; i < 7; i++)
+//	{
+//		placer.cycleShape(0);
+//		placer.updateVisual(true); 
+//	}
+
 //	placer.printKernels();
 //	placer.achievePreciseAR(0.01);
 //	cout << "avg_time: " << placer.computeAvgTime() << endl;
@@ -82,7 +84,7 @@ int main(int argc, char** argv)
 //	placer.fitKernelsToWafer();
 //	placer.updateVisual(); 
 
-//	placer.performAnnealing();
+	placer.performAnnealing();
 
 //	placer.printTimeAndArea();
 //	placer.updateVisual(); 

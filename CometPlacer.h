@@ -269,11 +269,24 @@ public:
 		if(!wait_for_anykey) return;
 
 		//wait for any key to be pressed
-		cout << "\nPress any key to continue...\n";
+		cout << "\nPress 'n' to continue...\n";
 		SDL_Event event;
 		while( SDL_WaitEvent(&event) )
+		{
 			if(event.type == SDL_KEYDOWN)
-				break;
+			{
+				//press "n" for next
+				if(event.key.keysym.sym == SDLK_n )
+					break;
+
+				//press "x" to kill window and process
+				if(event.key.keysym.sym  == SDLK_x )
+				{
+					cout << "Exiting process from manual command...\n";
+					exit(0);
+				}
+			}
+		}
 #endif
 		return;
 	}
@@ -534,8 +547,13 @@ public:
 				break;
 			}
 		}
-		printARs();
-		updateVisual();
+
+		//After inflating kernels to fill most of the WSE, set
+		//the target time for each kernel to be the longest kernel time 
+		int longest_time = getLongestTime();
+
+		for(int i = 0; i < kernels.size(); i++)
+			kernels[i]->setTargetTime(longest_time);
 	}
 
 	//for each kernel, slightly increase its size until
@@ -697,6 +715,19 @@ public:
 	void performAnnealing()
 	{
 		annealer.setBlocks(kernels);
+//		for(int i = 0; i < kernels.size(); i++)
+//		{
+//			Block_Wrapper<Kernel> wrapper = Block_Wrapper<Kernel>(kernels[i]);
+//			for(int j = 0; j < wrapper.getShapes().size(); j++)
+//			{
+//				kernels[i]->nextShape();
+//				updateVisual(true);
+//			}
+//
+//		}
+//
+//	return;
+
 		annealer.initializeOps();
 		annealer.initializeTemp();
 		updateVisual(true);
@@ -706,7 +737,7 @@ public:
 		{
 			for(int i = 0; i < 10; i++)
 			{
-				for(int i = 0; i < 500; i++)
+				for(int i = 0; i < 50; i++)
 				{
 					annealer.performAnnealingStep();
 					printTimeAndArea();
@@ -758,11 +789,11 @@ public:
 
 	}
 
-	void computePossibleShapes()
+	void computePossibleKernels()
 	{
 		for(int i = 0; i < kernels.size(); i++)
 		{
-			kernels[i]->computePossibleShapes();
+			kernels[i]->computePossibleKernels();
 		}
 	}
 

@@ -20,7 +20,6 @@ private:
 public:
 	//each Dblock holds 3 Convolutional Kernels
 	vector<Conv> convs;
-	string EP_to_increase; //denotes the next EP to increase for height
 
 	//constructors
 	Dblock()
@@ -54,7 +53,6 @@ public:
 		width = -1;
 		time = -1;
 		memory = -1;
-		EP_to_increase = "c";
 	}
 	
 	//take in a new Execution Parameter
@@ -278,16 +276,10 @@ public:
 
        	bool setEPtoNextValue(string EP_key, bool increase=true)
 	{
-		for(Kernel k : convs)
-		{
-			k.printParameters();
-			k.printPerformance();
-		}
-
 		bool change_made = false;
 
 		double min_EP = convs[0].getNextEPValue(EP_key, increase);
-		double next_EP = min_EP;
+		double next_EP;
 		for(int i = 1; i < convs.size(); i++)
 		{
 			next_EP = convs[i].getNextEPValue(EP_key, increase);
@@ -296,7 +288,7 @@ public:
 				min_EP = next_EP;
 		}
 
-//	cout << getName() << ": setEPtoNextValue("<<EP_key<<", "<<increase<<") to "<<next_EP<<endl;
+	cout << getName() << ": setEPtoNextValue("<<EP_key<<", "<<increase<<") to "<<next_EP<<endl;
 
 		for(int i = 0; i < convs.size(); i++)
 		{
@@ -304,8 +296,15 @@ public:
 				change_made = true;
 		}
 
-		if(!change_made)
-		cout << "!!!!No changes made for setNextEP(" << EP_key << ") to " << min_EP <<  "\n";
+		if(change_made)
+		{
+			EP[EP_key] = min_EP;
+			computePerformance();
+		}
+		else
+			cout << "!!!!No changes made for setNextEP(" << EP_key << ") to " << min_EP <<  "\n";
+		printParameters();
+		printPerformance();
 
 		return change_made;
 		
@@ -356,36 +355,47 @@ public:
 	bool changeHeight(bool increase=true)
 	{		
 	//	cout << "changeHeight() of Dblock: " << getName() << endl;
-//		cout << "EP_to_increase: " << EP_to_increase << endl;
-		Kernel* k;
-	        if(increase) k = getLongestConv();
-		else k = getShortestConv();
+		string EP_to_increase = "c";
+
+		if(increase)
+		{
+			//find the smallest EP that affects height
+			if(getEP("h") <= getEP("c") && getEP("h") <= getEP("w"))
+				EP_to_increase = "h";
+			if(getEP("w") <= getEP("c") && getEP("w") <= getEP("h"))
+				EP_to_increase = "w";
+		}
+		else
+		{
+			//find the largest EP that affects height
+			if(getEP("h") >= getEP("c") && getEP("h") >= getEP("w"))
+				EP_to_increase = "h";
+			if(getEP("w") >= getEP("c") && getEP("w") >= getEP("h"))
+				EP_to_increase = "w";
+		}
+
 
 		//increase the next EP	
 		bool success = setEPtoNextValue(EP_to_increase, increase);
 
-		//change the EP to be increased
-		if(EP_to_increase == "c") EP_to_increase = "h";
-		else if(EP_to_increase == "h") EP_to_increase = "w";
-		else if(EP_to_increase == "w") EP_to_increase = "c";
 
 		return success;
 	}
 
 	Kernel* createCopy()
 	{
-		cout << "createCopy() Dblock:\n";
-		cout << "Original: " << this << endl;
+	//	cout << "createCopy() Dblock:\n";
+	//	cout << "Original: " << this << endl;
 
 		Dblock* newBlock = new Dblock(*this);
-		cout << "New Dblock: " << newBlock << endl;
+	//	cout << "New Dblock: " << newBlock << endl;
 		
 		return newBlock;
 	}
 
 	void copyDataFrom(Kernel* k)
 	{
-		cout << "Dblock copyDataFrom()\n";
+	//	cout << "Dblock copyDataFrom()\n";
 		Kernel::copyDataFrom(k);
 		this->convs = dynamic_cast<Dblock*>(k)->convs;
 

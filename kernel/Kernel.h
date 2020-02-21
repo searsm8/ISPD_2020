@@ -73,11 +73,11 @@ public:
 	virtual void printPerformance()
 	{
 		if(!print) return;
-		cout << "Performance metrics for kernel " << ID << ":\n";
-		cout << "Height: " << height << endl;
-		cout << "Width: "  << width  << endl;
-		cout << "Time: "   << time   << endl;
-		cout << "Memory: " << memory << endl;
+		cout << "Performance metrics for kernel " << ID << ":\t";
+		cout << "Height: " << height << "\t";
+		cout << "Width: "  << width  << "\t";
+		cout << "Time: "   << time   << "\t";
+		cout << "Memory: " << memory << "\n";
 	}
 
 //ACCESSORS
@@ -178,28 +178,36 @@ public:
 
 	void setAR(double new_AR) { target_AR = new_AR; }
 
-	void setTime(double new_time) { target_time = new_time; }
+	void setTargetTime(double new_time) { target_time = new_time; }
 
 	//fill in possible_kernels
-	void computePossibleShapes()
+	void computePossibleKernels()
 	{
-		cout << "computePossibleShapes()\n";
+		cout << "computePossibleKernels()\n";
 
-		vector<double> target_ARs = {0.25, 0.33, 0.5, 1, 2, 3, 4}; 
-
-		setTime(getTime());
+		vector<double> target_ARs = {0.25, 0.33, 0.5, 1}; 
 
 		for( int i = 0; i < target_ARs.size(); i++)
 		{
 			changeShapeToAR(target_ARs[i]);
 		
-			//add current EPs to possible_EPs
-			possible_kernels.push_back(createCopy());
+			//if same height as previous, remove previous
+			if(possible_kernels.size() > 0 && possible_kernels.back()->getHeight() >= getHeight())
+				possible_kernels.pop_back();
+
+			//if different shape found, add current EPs to possible_EPs
+			if(possible_kernels.size() == 0 || possible_kernels.back()->getWidth() > getWidth())
+				possible_kernels.push_back(createCopy());
 		}
 
 		//set to first shape
 		shape_index = 0;
-		//setShape(0);
+		setShape(0);
+	}
+
+	vector<Kernel*> getPossibleKernels()
+	{
+		return possible_kernels;
 	}
 
 	void setShape(int index)
@@ -209,8 +217,11 @@ public:
 		computePerformance();
 		cout << "AR: " << getAR() << endl;
 		cout << "target_AR: " << getTargetAR() << endl;
-		cout << "Time: " << getTime()<< endl;;
-		cout << "Area: " << getArea()<< endl;;
+		cout << "Time: " << getTime()<< endl;
+		cout << "target_time: " << getTargetTime()<< endl;
+		cout << "Area: " << getArea()<< endl;
+		printParameters();
+		printPerformance();
 	}
 
 	void nextShape()
@@ -227,9 +238,10 @@ public:
 	//change the shape of the kernel to achieve the new target AR
 	void changeShapeToAR(double new_AR)
 	{
+		cout << "changeShapeToAR()\n";
 		target_AR = new_AR;
 
-		int orig_time = getTargetTime();
+		cout << "target_time: " << target_time << endl;
 
 		//change the shape repeatedly by increasing and decreasing
 		//stop when the target AR is achieved or surpassed.
@@ -252,7 +264,7 @@ public:
 					break;
 			}
 					
-			if(getTime() > orig_time)
+			if(getTime() > target_time)
 			{
 				if(!increaseSize())
 					break;
@@ -266,18 +278,25 @@ public:
 		
 		computePerformance();
 		//try to get back to the original area
-		while(getTime() < orig_time) 
+		while(getTime() < target_time) 
 		{
+			cout << "DECREASE SIZE!\n";
+		printPerformance();
 			if(!decreaseSize())
 				break;
 			computePerformance();
 		}
-		while(getTime() > orig_time) 
+		while(getTime() > target_time) 
 		{
+			cout << "INCREASE SIZE!\n";
+		printPerformance();
 			if(!increaseSize())
 				break;
 			computePerformance();
 		}
+		cout << "target_AR: " << target_AR << " actual: " << getAR() << endl;
+		printPerformance();
+
 	}
 
 	virtual void updateXY()
@@ -306,17 +325,9 @@ public:
 	{
 		//don't increase an EP beyond the FP!!! it gains no time because ceil()
 		if(getAR() < getTargetAR())
-		{
-			if(changeHeight(true))
-				return true;
-			else return false; 
-		}
+			return changeHeight(true);
 		else
-		{
-			if(changeWidth(true))
-				return true;
-			else return changeHeight(true);
-		}
+			return changeWidth(true);
 	}
 
 	//decrease the size of the kernel based on the target AR
@@ -398,6 +409,7 @@ public:
 			return getFP("C");
 		if(EP_key == "k")
 			return getFP("K");
+		return -1;
 	}
 
 	
@@ -409,18 +421,18 @@ public:
 
 	virtual Kernel* createCopy()
 	{
-		cout << "createCopy() Kernel:\n";
+//		cout << "createCopy() Kernel:\n";
 		return new Kernel(*this);
 	}
 
 	//copy ONLY relevant data members into this Kernel
 	virtual void copyDataFrom(Kernel* k)
 	{
-		cout << "Kernel copyDataFrom()\n";
+//		cout << "Kernel copyDataFrom()\n";
 
-		x = k->x;
-		y = k->y;
-		rotation = k->rotation;
+//		x = k->x;
+//		y = k->y;
+//		rotation = k->rotation;
 		target_AR = k->target_AR;
 		FP = k->FP;
 		EP = k->EP;

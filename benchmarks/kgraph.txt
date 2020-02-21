@@ -1,4 +1,4 @@
-﻿(* Node Definitions *)
+﻿* Node Definitions *)
 output[0] n=[28 28 512] name='y'
 input[0] n=[56 56 256] name='x'
 dblock[1] f=128 h=56 w=56

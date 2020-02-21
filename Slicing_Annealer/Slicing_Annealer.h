@@ -57,7 +57,7 @@ public:
 	Slicing_Annealer(int init_wirepenalty, int init_width, int init_height) 
 	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height)
 	{
-		move_weights = {70, 20, 10, 40, 0}; //determines how often each type of move is done
+		move_weights = {70, 20, 10, 0, 0}; //determines how often each type of move is done
 	}
 
 
@@ -118,8 +118,10 @@ public:
 	//set starting temperature equal to 30*std_dev
 	float initializeTemp()
 	{
+		for(int i = 0; i < blocks.size(); i++)
+			blocks[i]->computePossibleKernels();
+
 		int num_initialize_moves = blocks.size()*100;
-		temp = 100000; //set to very high temp (doesn't matter, since will accept all moves for now)
 		printf("Initializing temp...(%d random moves)\n", num_initialize_moves);
 		vector <double> deltas;
 		float new_cost, delta;
@@ -475,6 +477,8 @@ public:
 				block_stack.push(new Block_Wrapper<Block>(b1, b2, ops[i][op_index]));
 		 	}
 		}
+
+		block_stack.top()->updatePosition();
 
 		return block_stack.top();
 
