@@ -101,9 +101,9 @@ public:
 
 	int getBottom() { return y + height; }
 
-	int getWidth() { return width; }
+	int getWidth() { if(rotation == 0) return width; else return height; }
 
-	int getHeight() { return height; }
+	int getHeight() { if(rotation == 0) return height; else return width; }
 
 	int getArea() { return width*height; }
 

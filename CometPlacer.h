@@ -269,7 +269,7 @@ public:
 		if(!wait_for_anykey) return;
 
 		//wait for any key to be pressed
-		cout << "\nPress 'n' to continue...\n";
+		cout << "\nPress 'n' to continue, 'x' to quit...\n";
 		SDL_Event event;
 		while( SDL_WaitEvent(&event) )
 		{
@@ -750,6 +750,8 @@ public:
 			}
 			printTimeAndArea();
 			annealer.WSEcostFunction();
+			annealer.printTemp();
+			annealer.printCost();
 			updateVisual(true);
 			if(annealer.getTemp() < 1)
 				return;

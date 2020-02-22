@@ -1,11 +1,11 @@
-﻿* Node Definitions *)
+﻿(* Node Definitions *)
 output[0] n=[28 28 512] name='y'
 input[0] n=[56 56 256] name='x'
-dblock[1] f=128 h=56 w=56
+dblock[1] f=128 h=92 w=92
 dblock[2] f=128 h=56 w=56
 dblock[3] f=256 h=28 w=28
 dblock[4] f=256 h=56 w=56
-dblock[5] f=256 h=56 w=56
+dblock[5] f=128 h=56 w=56
 dblock[6] f=256 h=56 w=56
 dblock[7] f=128 h=56 w=56
 dblock[8] f=256 h=56 w=56

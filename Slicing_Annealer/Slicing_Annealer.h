@@ -78,12 +78,21 @@ public:
 
 	void printOps()
 	{
-		return;
 
 		cout << "Slicing ops: ";
 		for(int i = 0; i < ops.size(); i++)
 			cout << blocks[i]->getName() << " " << ops[i] << " ";
 		cout << endl;
+	}
+
+	void printTemp()
+	{
+		cout << "Temp: " << temp << endl;
+	}
+
+	void printCost()
+	{
+		cout << "Best Cost: " << best_cost << endl;
 	}
 
 //ANNEALING FUNCTIONS
@@ -98,8 +107,6 @@ public:
 
 		while(previous_ops_count.size() < ops.size())
 			previous_ops_count.push_back(0);
-		layout = findBestLayout();
-		best_layout = layout;
 		cout << "blocks.size() = " << blocks.size() << endl;
 		cout << "ops.size() = " << ops.size() << endl;
 			
@@ -108,7 +115,6 @@ public:
 			best_blocks.push_back(blocks[i]->createCopy());
 			best_ops.push_back(ops[i]);
 		}
-		best_cost = costFunction();
 	}
 
 
@@ -121,7 +127,7 @@ public:
 		for(int i = 0; i < blocks.size(); i++)
 			blocks[i]->computePossibleKernels();
 
-		int num_initialize_moves = blocks.size()*100;
+		int num_initialize_moves = blocks.size()*10;
 		printf("Initializing temp...(%d random moves)\n", num_initialize_moves);
 		vector <double> deltas;
 		float new_cost, delta;
@@ -134,7 +140,6 @@ public:
 		for(int i = 0; i < num_initialize_moves; i++)
 		{
 			performMove(); //random move at very high temp
-			
 			layout = findBestLayout();
 					
 			new_cost = costFunction();
@@ -145,16 +150,18 @@ public:
 			acceptMove(new_cost); //always accept the move during initialization	
 		}
 		
+		best_layout = layout;
+
 		double std_dev = StandardDeviation(deltas);
 			
 		temp = 30*std_dev; //for a temperature of 30*std_dev,
 				//there will be a 90% chance to accept a very bad change of 3*std_dev
 		printf("Starting Temp: %.3f\n", temp);
 		
-		//initialize alpha and beta based on the current area and wirelength
-		//initializeWeights(best_layout);
+		best_cost = costFunction();
+
+		temp = 1000;
 			
-		temp = 10000;
 		return temp;
 	}
 
@@ -200,7 +207,7 @@ public:
 			case 5: move5(); break;
 			default:move1();
 		}
-//		printOps();
+		printOps();
 	}
 
 	//returns a number corresponding to a move picked randomly based on weights
@@ -452,7 +459,6 @@ public:
 	//finds the minimum possible area given the blocks and ops string
 	Block_Wrapper<Block>* findBestLayout()
 	{
-
 		//use a stack to read the layout string
 		stack<Block_Wrapper<Block>*> block_stack;
 
@@ -478,9 +484,28 @@ public:
 		 	}
 		}
 
-		block_stack.top()->updatePosition();
+		//find the best area for the shapes in the layout
+		Block_Wrapper<Block>* new_layout = block_stack.top();
+		int best_area = new_layout->getShapeArea(0);
+		int best_index = 0;
 
-		return block_stack.top();
+		for(int i = 1; i < new_layout->getShapes().size(); i++)
+		{
+			int next_area = new_layout->getShapeArea(i); 
+			if(next_area < best_area)
+			{
+				best_area = next_area;	
+				best_index = i;
+			}
+		}
+			
+		//given the best area found for the layout,
+		//solidify the dimensions and positions of 
+		//all Blocks
+		new_layout->solidifyShape(best_index);
+		new_layout->updatePosition();
+
+		return new_layout;
 
 	}
 

@@ -36,7 +36,7 @@ private:
 
 	vector < pair<int, int> > shapes; //pair<width, height>
 		//set of possible shapes that are within A.R. limits
-		//should be sorted by ascending widths
+		//should be sorted by DESCENDING widths
 						
 	double w_width, w_height; //wrapper width and height
 	int x, y;
@@ -72,7 +72,7 @@ public:
 	
 	double getArea()  { return getWidth() * getHeight(); }
 	
-vector < pair<float, float> > getShapes() { return shapes; }
+vector < pair<int, int> > getShapes() { return shapes; }
 	
 //MODIFIERS
 	void setCut(char new_cut) { cut = new_cut; } 
@@ -80,6 +80,11 @@ vector < pair<float, float> > getShapes() { return shapes; }
 	void setX(int new_x) { x = new_x; }
 
 	void setY(int new_y) { y = new_y; }
+
+	void setWidth(int new_width) { w_width = new_width; }
+
+	void setHeight(int new_height) { w_height = new_height; }
+
 //COMPUTATORS
 	
 	//based on the cut type, set the dimensions of this wrapper
@@ -102,10 +107,11 @@ vector < pair<float, float> > getShapes() { return shapes; }
 
 		shapes.clear();
 		for(int i = 0; i < possible_blocks.size(); i++)
-		{
 			shapes.push_back(pair<int, int>(possible_blocks[i]->getWidth(), possible_blocks[i]->getHeight()));
-		}
-			//TODO add shapes to the base block for 90 degree rotations!
+
+			//add shapes to the base block for 90 degree rotations!
+		for(int i = possible_blocks.size()-2; i >= 0; i--)
+			shapes.push_back(pair<int, int>(possible_blocks[i]->getHeight(), possible_blocks[i]->getWidth()));
 
 
 		printShapes();
@@ -113,6 +119,7 @@ vector < pair<float, float> > getShapes() { return shapes; }
 
 	void updateDimensions()
 	{
+		cout << "updateDimensions()\n";
 		if(base_level)
 			updateDimensionsBaseBlock();
 
@@ -132,12 +139,19 @@ vector < pair<float, float> > getShapes() { return shapes; }
 
 	void updatePosition()
 	{
+		cout << "updatePosition(): (" << x << ", " << y << ")\n";
+		//recursive base case
 		if(base_level)
+		{
+			cout << "base_level\n";
+			base_block->setX(x);
+			base_block->setY(y);
 			return;
+		}
 
-		//for non-base level wrappers, dimensions are the combination of w1 and w2,
+		//else, for non-base level wrappers, dimensions are the combination of w1 and w2,
 		//depending on the cut type
-		else if(cut == 'h')
+		if(cut == 'h')
 		{
 			//set the block x and y
 			w1->setX(x);
@@ -191,7 +205,7 @@ vector < pair<float, float> > getShapes() { return shapes; }
 			index_1 = w1->shapes.size()-1;
 			index_2 = w2->shapes.size()-1;
 
-			while(index_2 >= 0 && index_2 >= 0)
+			while(index_1 >= 0 && index_2 >= 0)
 			{
 				//for vertical cut, add widths together.
 				new_shape.first= w1->shapes[index_1].first + w2->shapes[index_2].first;
@@ -206,15 +220,91 @@ vector < pair<float, float> > getShapes() { return shapes; }
 		}
 
 		printShapes();
+	} //end combineShapes()
+
+	int getShapeArea(int index)
+	{
+		return shapes[index].first * shapes[index].second;	
 	}
+
+	//fully realize the shape specified by the index
+	//then repeats for all contained wrappers
+	//lower in the hierarchy
+	void solidifyShape(int index)
+	{
+		//recursive base case
+		if(base_level)
+		{
+			cout << "solidifyShape() base block!\n";
+			//given the desired shape of this kernel, apply correct EP
+			int size = base_block->getPossibleKernels().size();
+			if(index < size)
+			{
+				base_block->copyDataFrom(base_block->getPossibleKernels()[index]);
+				base_block->setRotation(0);
+			}
+			else
+			{
+			base_block->copyDataFrom(base_block->getPossibleKernels()[2*(size-1) - index]);
+			//was chosen from rotated blocks!
+			base_block->setRotation(90);
+			}
+
+			base_block->computePerformance();
+			setWidth(base_block->getWidth());
+			setHeight(base_block->getHeight());
+
+			return;	
+		}
+
+		cout << "\n\nSetting shape of Block_Wrapper: (" <<shapes[index].first<<", "<<shapes[index].second<<")\n\n";
+
+		//else, it is not base_level
+		setWidth(shapes[index].first);
+		setHeight(shapes[index].second);
+
+		//find the shapes which correspond to this larger block's shape
+		if(cut == 'h')
+		{
+			for(int i = 0; i < w1->shapes.size(); i++)
+				if(w1->shapes[i].first <= getWidth())
+				{
+					w1->solidifyShape(i);
+					break;
+				}
+
+			for(int i = 0; i < w2->shapes.size(); i++)
+				if(w2->shapes[i].first <= getWidth())
+				{
+					w2->solidifyShape(i);
+					break;
+				}
+		}
+		else //it is a 'v' cut
+		{
+			for(int i = w1->shapes.size()-1; i >= 0; i--)
+				if(w1->shapes[i].second <= getHeight())
+				{
+					w1->solidifyShape(i);
+					break;
+				}
+
+			for(int i = w2->shapes.size()-1; i >= 0; i--)
+				if(w2->shapes[i].second <= getHeight())
+				{
+					w2->solidifyShape(i);
+					break;
+				}
+		}
+	} //end solidifyShape()
 
 //PRINTERS
 	void printShapes()
 	{
 		if(!print) return;
 		cout << "\nBlock_Wrapper shapes:\t"; 
-		if(base_block)
-			cout << "(Base Block)\n";
+		if(base_level)
+			cout << "(Base Block: " << base_block->getName() << ")\n";
 		else cout << "(" << cut << " cut)\n";
 		for(int i = 0; i < shapes.size(); i++)
 		{
