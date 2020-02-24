@@ -24,6 +24,7 @@ private:
 	bool print = true;
 public:
 	static int kernel_count;
+	string type;
 
 	int x, y, rotation, ID;
 	int height, width, time, memory;
@@ -42,6 +43,8 @@ public:
 	vector<Kernel*> next_kernels; //pointers to the next kernels in the pipeline
 	Kernel* prev_kernel;
 
+	vector<int> colors;
+
 	//constructors
 	Kernel()
 	{
@@ -50,7 +53,11 @@ public:
 		rotation = 0;
 		ID = kernel_count++;
 		name = "Kernel " + to_string(ID);
+		type = "Kernel";
 		target_AR = 1;
+
+		for(int i = 0; i < 3; i++)
+			colors.push_back(rand()%255);
 	}
 
 	virtual void printParameters()
@@ -81,7 +88,7 @@ public:
 	}
 
 //ACCESSORS
-	string getType() { return "Kernel"; }
+	string getType() { return type; }
 
 	string getName() { return name; }
 
@@ -112,6 +119,8 @@ public:
 	int getTargetTime() { return target_time; }
 
 	int getMemory() { return memory; }
+
+	vector<int> getColors() { return colors; }
 
 	//return a pair (x, y) specifying the center of this Kernel
 	pair<double, double> getCenter()
@@ -183,7 +192,7 @@ public:
 	//fill in possible_kernels
 	void computePossibleKernels()
 	{
-		cout << "computePossibleKernels()\n";
+//cout << "computePossibleKernels()\n";
 
 		vector<double> target_ARs = {0.25, 0.33, 0.5, 1}; 
 
@@ -212,22 +221,22 @@ public:
 
 	void setShape(int index)
 	{
-		cout << "setShape(" << index << ")" <<endl;
+//cout << "setShape(" << index << ")" <<endl;
 		copyDataFrom(possible_kernels[index]);
 		computePerformance();
-		cout << "AR: " << getAR() << endl;
-		cout << "target_AR: " << getTargetAR() << endl;
-		cout << "Time: " << getTime()<< endl;
-		cout << "target_time: " << getTargetTime()<< endl;
-		cout << "Area: " << getArea()<< endl;
-		printParameters();
-		printPerformance();
+//cout << "AR: " << getAR() << endl;
+//cout << "target_AR: " << getTargetAR() << endl;
+//cout << "Time: " << getTime()<< endl;
+//cout << "target_time: " << getTargetTime()<< endl;
+//cout << "Area: " << getArea()<< endl;
+//printParameters();
+//printPerformance();
 	}
 
 	void nextShape()
 	{
-		cout << "nextShape()\n";
-		cout << "possible_kernels.size(): " << possible_kernels.size() << endl;
+//cout << "nextShape()\n";
+//cout << "possible_kernels.size(): " << possible_kernels.size() << endl;
 		setShape(shape_index);
 
 		shape_index++;
@@ -238,10 +247,10 @@ public:
 	//change the shape of the kernel to achieve the new target AR
 	void changeShapeToAR(double new_AR)
 	{
-		cout << "changeShapeToAR()\n";
+//cout << "changeShapeToAR()\n";
 		target_AR = new_AR;
 
-		cout << "target_time: " << target_time << endl;
+//cout << "target_time: " << target_time << endl;
 
 		//change the shape repeatedly by increasing and decreasing
 		//stop when the target AR is achieved or surpassed.
@@ -280,21 +289,21 @@ public:
 		//try to get back to the original area
 		while(getTime() < target_time) 
 		{
-			cout << "DECREASE SIZE!\n";
-		printPerformance();
+//cout << "DECREASE SIZE!\n";
+//printPerformance();
 			if(!decreaseSize())
 				break;
 			computePerformance();
 		}
 		while(getTime() > target_time) 
 		{
-			cout << "INCREASE SIZE!\n";
-		printPerformance();
+//cout << "INCREASE SIZE!\n";
+//printPerformance();
 			if(!increaseSize())
 				break;
 			computePerformance();
 		}
-		cout << "target_AR: " << target_AR << " actual: " << getAR() << endl;
+//cout << "target_AR: " << target_AR << " actual: " << getAR() << endl;
 		printPerformance();
 
 	}

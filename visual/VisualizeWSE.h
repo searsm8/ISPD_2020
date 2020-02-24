@@ -54,7 +54,7 @@ void drawBackground(SDL_Window* window)
     
 }
 
-void drawRect(SDL_Renderer* renderer, vector<int> rect)
+void drawRect(SDL_Renderer* renderer, vector<int> rect, vector<int> colors)
 {
     SDL_Rect r;
     r.x = rect[0];
@@ -63,7 +63,7 @@ void drawRect(SDL_Renderer* renderer, vector<int> rect)
     r.h = rect[3];
 
     // Set render color to white fill 
-    SDL_SetRenderDrawColor( renderer, 255,255,255,255);
+    SDL_SetRenderDrawColor( renderer, colors[0], colors[1], colors[2], 255);
     SDL_RenderFillRect( renderer, &r );
     // Draw black border 
     SDL_SetRenderDrawColor( renderer, 0,0,0,255);
@@ -76,25 +76,25 @@ void drawConnection(SDL_Renderer* renderer, Kernel* k)
 {
 	for(int i = 0; i < k->getNextKernels().size(); i++)
 	{
-	Kernel* next = k->getNextKernels()[i];
-	if(next == NULL) break;
+		Kernel* next = k->getNextKernels()[i];
+		if(next == NULL) break;
 
-	pair<double, double> c1 = k->getCenter();
-	pair<double, double> c2 = next->getCenter();
-	
-	//draw the connecting line
-	SDL_RenderDrawLine(renderer, c1.first, c1.second, c2.first, c2.second);
+		pair<double, double> c1 = k->getCenter();
+		pair<double, double> c2 = next->getCenter();
+		
+		//draw the connecting line
+		SDL_RenderDrawLine(renderer, c1.first, c1.second, c2.first, c2.second);
 
-	//draw small squares at each endpoint
-	SDL_Rect r;
-	r.x = c1.first;
-	r.y = c1.second;
-	r.w = 3;
-	r.h = 3;
+		//draw small squares at each endpoint
+		SDL_Rect r;
+		r.x = c1.first;
+		r.y = c1.second;
+		r.w = 3;
+		r.h = 3;
 
-	// Set render color to white fill 
-	SDL_SetRenderDrawColor( renderer, 0,0,0,255);
-	SDL_RenderFillRect( renderer, &r );
+		// Set render color to white fill 
+		SDL_SetRenderDrawColor( renderer, 0,0,0,255);
+		SDL_RenderFillRect( renderer, &r );
 	}
 
 }
@@ -117,7 +117,7 @@ void updateWSE(SDL_Window* window, vector<Kernel*> kernels_to_draw, int iteratio
 	    auto rects = k->getRectangles();
 	    for(vector<int> rect : rects) 
 	    {
-		    drawRect(renderer, rect);		
+		    drawRect(renderer, rect, k->getColors());		
 	    }
     }
     // Render the rects to the screen

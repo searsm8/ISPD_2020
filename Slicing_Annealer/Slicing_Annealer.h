@@ -39,14 +39,18 @@ private:
 	double temp; 	//current annealing temperature
 
 	Block_Wrapper<Block>* layout;
-	Block_Wrapper<Block>* best_layout;
-	double best_cost;
+	Block_Wrapper<Block>* prev_layout;
+	double prev_cost;
 
-	vector<Block*> best_blocks;
-	vector<string> best_ops;
+	vector<Block*> prev_blocks;
+	vector<string> prev_ops;
 	vector<int> previous_ops_count;
 	vector< vector<int> > next_block_indices;
 
+	int move1_index;
+	int prev_move_num;
+	int reject_count;
+	int equilibrium_count;
 
 public:
 
@@ -55,7 +59,7 @@ public:
 	Slicing_Annealer() {}
 
 	Slicing_Annealer(int init_wirepenalty, int init_width, int init_height) 
-	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height)
+	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height), prev_move_num(0), reject_count(0), equilibrium_count(100)
 	{
 		move_weights = {70, 20, 10, 0, 0}; //determines how often each type of move is done
 	}
@@ -71,14 +75,14 @@ public:
 	void setBlocks(vector<Block*> new_blocks)
 	{
 		blocks = new_blocks;
-		//best_blocks = new_blocks;
+		//prev_blocks = new_blocks;
 	}
 
 //PRINT FUNCTIONS
 
 	void printOps()
 	{
-
+		if(!print) return;
 		cout << "Slicing ops: ";
 		for(int i = 0; i < ops.size(); i++)
 			cout << blocks[i]->getName() << " " << ops[i] << " ";
@@ -87,13 +91,23 @@ public:
 
 	void printTemp()
 	{
+		if(!print) return;
 		cout << "Temp: " << temp << endl;
 	}
 
 	void printCost()
 	{
-		cout << "Best Cost: " << best_cost << endl;
+		if(!print) return;
+		cout << "Prev Cost: " << prev_cost << endl;
 	}
+
+	void printResults()
+	{
+		cout << "\n******RESULTS******\n";
+		cout << "Final Cost: " << costFunction();
+
+	}
+
 
 //ANNEALING FUNCTIONS
 
@@ -107,13 +121,13 @@ public:
 
 		while(previous_ops_count.size() < ops.size())
 			previous_ops_count.push_back(0);
-		cout << "blocks.size() = " << blocks.size() << endl;
-		cout << "ops.size() = " << ops.size() << endl;
+//cout << "blocks.size() = " << blocks.size() << endl;
+//cout << "ops.size() = " << ops.size() << endl;
 			
 		for(int i = 0; i < blocks.size(); i++)
 		{
-			best_blocks.push_back(blocks[i]->createCopy());
-			best_ops.push_back(ops[i]);
+			prev_blocks.push_back(blocks[i]->createCopy());
+			prev_ops.push_back(ops[i]);
 		}
 	}
 
@@ -127,7 +141,8 @@ public:
 		for(int i = 0; i < blocks.size(); i++)
 			blocks[i]->computePossibleKernels();
 
-		int num_initialize_moves = blocks.size()*10;
+		int num_initialize_moves = blocks.size()*100;
+
 		printf("Initializing temp...(%d random moves)\n", num_initialize_moves);
 		vector <double> deltas;
 		float new_cost, delta;
@@ -144,24 +159,26 @@ public:
 					
 			new_cost = costFunction();
 		
-			delta = new_cost - best_cost;
+			delta = new_cost - prev_cost;
+	cout << "delta: " << delta << endl;
 			deltas.push_back(delta);
 			
 			acceptMove(new_cost); //always accept the move during initialization	
 		}
 		
-		best_layout = layout;
+		prev_layout = layout;
 
 		double std_dev = StandardDeviation(deltas);
 			
-		temp = 30*std_dev; //for a temperature of 30*std_dev,
+		temp = 3*std_dev; //for a temperature of 30*std_dev,
 				//there will be a 90% chance to accept a very bad change of 3*std_dev
-		printf("Starting Temp: %.3f\n", temp);
+		cout << "\n\n************************\n";
+		cout << "std_dev: " << std_dev << endl;		
+		cout << "Starting Temp: " << temp << endl;
+		cout << "************************\n";
 		
-		best_cost = costFunction();
+		prev_cost = costFunction();
 
-		temp = 1000;
-			
 		return temp;
 	}
 
@@ -197,7 +214,8 @@ public:
 	
 	void performMove()
 	{	
-		printOps();
+		printTemp();
+		prev_move_num = 0;
 		switch(pickMove())
 		{
 			case 1: move1(); break;
@@ -207,7 +225,6 @@ public:
 			case 5: move5(); break;
 			default:move1();
 		}
-		printOps();
 	}
 
 	//returns a number corresponding to a move picked randomly based on weights
@@ -235,11 +252,19 @@ public:
 	{
 		cout << "move1()" << endl;
 
-		int i = rand() % (blocks.size()-1);
+		move1_index = rand() % (blocks.size()-1);
+		prev_move_num = 1;
 	
-		Block* temp = blocks[i];
-		blocks[i] = blocks[i+1];
-		blocks[i+1] = temp;
+		Block* temp = blocks[move1_index];
+		blocks[move1_index] = blocks[move1_index+1];
+		blocks[move1_index+1] = temp;
+	}
+
+	void undoMove1()
+	{
+		Block* temp = blocks[move1_index];
+		blocks[move1_index] = blocks[move1_index+1];
+		blocks[move1_index+1] = temp;
 	}
 
 	//move M2
@@ -287,23 +312,19 @@ public:
 			if(previous_ops_count[i-1] < i-1) //check if this move would preserve balloting
 		  	{ 
 				if(ops[i-1].size() == 0 || ops[i][0] != ops[i-1][ops[i-1].size()-1]) //check if this move would preserve normalization
-				{	printf("moving backward!\n");
+				{//	printf("moving backward!\n");
 					ops[i-1].push_back(ops[i][0]);
 					ops[i].erase(ops[i].begin());
-			//		previous_ops_count[i-1]++;
-					
 					break;			
 				}
 			} 
 			
 			if(i != ops.size() - 1) //can't move the last op forward!
-			{	printf("moving forward!\n");		
+			{//	printf("moving forward!\n");		
 				if(ops[i][ops[i].size()-1] != ops[i+1][0]) //check if this move would preserve normalization
 				{
 					ops[i+1].insert(0, 1, ops[i][ops[i].size()-1]);
-					ops[i].erase(--ops[i].end());								
-			//		previous_ops_count[i]--;
-					
+					ops[i].erase(--ops[i].end());
 					break;		
 				} 
 			}
@@ -326,9 +347,7 @@ public:
 				Block* b = getLongestBlock();
 				cout << "Increasing Block: " << b->getName() << endl;
 				b->printPerformance();
-				if(b->increaseSize())
-					cout << "size increased!\n";
-				else cout << "could NOT increase size!\n";
+				b->increaseSize();
 				b->computePerformance();
 				b->printPerformance();
 				b->printParameters();
@@ -393,9 +412,9 @@ public:
 		cout << "Temp: " << temp << endl;
 		
 		double new_cost = costFunction();
-		cout << "Cost difference: " << new_cost-best_cost << endl;
+		cout << "Cost difference: " << new_cost-prev_cost << endl;
 
-		double delta = new_cost - best_cost;
+		double delta = new_cost - prev_cost;
 
 		//check if the new layout is better
 		if(delta <= 0)
@@ -433,26 +452,35 @@ public:
 
 	void acceptMove(double new_cost)
 	{
-		cout << "acceptMove()\n";
+		cout << "***acceptMove()\n\n";
+	//	if(new_cost > prev_cost) return;
+		reject_count = 0;
+
 		for(int i = 0; i < blocks.size(); i++)
 		{
-			best_blocks[i]->copyDataFrom(blocks[i]);
-			best_ops[i] = ops[i];
+			prev_blocks[i]->copyDataFrom(blocks[i]);
+			prev_ops[i] = string(ops[i]);
 		}
-		best_cost = new_cost;
+		prev_cost = new_cost;
+		prev_layout = layout;
 	}
 
 	void rejectMove()
 	{
-		cout << "rejectMove()\n";
-		for(int i = 0; i < best_blocks.size(); i++)
+		cout << "***rejectMove()\n\n";
+		reject_count++;
+
+		for(int i = 0; i < prev_blocks.size(); i++)
 		{
-			blocks[i]->copyDataFrom(best_blocks[i]);
-			ops[i] = best_ops[i];
+			blocks[i]->copyDataFrom(prev_blocks[i]);
+			ops[i] = string(prev_ops[i]);
 		}
-		cout << "Reset Vectors.\n";
+
+		if(prev_move_num == 1)
+			undoMove1();
 
 		layout = findBestLayout();
+
 	}
 
 	//using the ops slicing string, combine blocks until a full layout is achieved
@@ -486,24 +514,25 @@ public:
 
 		//find the best area for the shapes in the layout
 		Block_Wrapper<Block>* new_layout = block_stack.top();
-		int best_area = new_layout->getShapeArea(0);
-		int best_index = 0;
+		int prev_area = new_layout->getShapeArea(0);
+		int prev_index = 0;
 
 		for(int i = 1; i < new_layout->getShapes().size(); i++)
 		{
 			int next_area = new_layout->getShapeArea(i); 
-			if(next_area < best_area)
+			if(next_area < prev_area)
 			{
-				best_area = next_area;	
-				best_index = i;
+				prev_area = next_area;	
+				prev_index = i;
 			}
 		}
 			
 		//given the best area found for the layout,
 		//solidify the dimensions and positions of 
 		//all Blocks
-		new_layout->solidifyShape(best_index);
+		new_layout->solidifyShape(prev_index);
 		new_layout->updatePosition();
+		new_layout->updateDimensions();
 
 		return new_layout;
 
@@ -532,20 +561,19 @@ public:
 		double alpha = 3.0;
 
 		//compute wire distance cost
-		layout->updateDimensions(); //must set x and y coordinates of each block before estimating wirelen!
 		int wirelen = computeTotalWirelength();;
 
 		int longest_time = getLongestTime();
 
-		cout << "Wirelength: " << wirelen << "*" << wirepenalty << " = "<< wirelen*wirepenalty << endl;
-		cout << "Longest Time: " << longest_time << endl;
+cout << "Wirelength: " << wirelen << "*" << wirepenalty << " = "<< wirelen*wirepenalty << endl;
+cout << "Longest Time: " << longest_time << endl;
 //		double cost = longest_time + wirelen*wirepenalty + alpha*layout->getArea();
-		double cost = getLongestTime() + wirelen*wirepenalty;
+		double cost = longest_time + wirelen*wirepenalty;
 		//impose a penalty for shapes that aren't within the allowed area! 
 		cost *= max(1.0, pow(layout->getWidth() / max_width, 3));
 		cost *= max(1.0, pow(layout->getHeight() / max_height, 3));
 
-		cout << "Total cost: " << cost << " (Best Cost: " << best_cost << ")" <<  endl;
+cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 		return cost;
 	}
 
@@ -593,6 +621,15 @@ public:
 				shortest_time = b->getTime();
 			}
 		return b;
+	}
+
+	//return true if "equilibrium" is reached,
+	//when no new moves have been accepted for many moves
+	bool equilibriumReached()
+	{
+		if(reject_count >= equilibrium_count)
+			return true;
+		else return false;
 	}
 
 }; //end Slicing_Annealer

@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 
 	placer.enforceMemoryConstraint();
 	placer.updateVisual(true); 
-	placer.maximizeKernelSize(0.6);
+	placer.inflateKernelSize(0.8);
 	placer.updateVisual(true); 
 //	placer.updateVisual(true); 
 //	placer.computePossibleShapes();

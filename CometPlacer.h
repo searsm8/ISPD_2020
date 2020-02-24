@@ -90,6 +90,7 @@ public:
 	void readNode(string line)
 	{
 		vector<string> elements = split(line, " ");
+		if(elements.size() == 0) return; //blank line!
 
 		//ignore the input and outputs. No Kernel is created for them
 		if(elements[0].find("input") != -1 || elements[0].find("output") != -1)
@@ -117,11 +118,12 @@ public:
 		Kernel* new_kernel;
 		if(elements[0].find("dblock") != -1)
 		{
-			new_kernel = new Dblock(H, W, F, i,i,i,i,i,i,i,i);
+			new_kernel = new Xblock(H, W, F, "dblock");
+			//new_kernel = new Dblock(H, W, F, i,i,i,i,i,i,i,i);
 		}
 		else if(elements[0].find("cblock") != -1)
 		{
-			new_kernel = new Cblock(H, W, F, i,i,i,i,i,i,i,i,i,i);
+			new_kernel = new Xblock(H, W, F, "cblock");
 		}
 
 		new_kernel->setName(elements[0]);
@@ -132,6 +134,7 @@ public:
 	void readConnection(string line)
 	{
 		vector<string> elements = split(line, " ");
+		if(elements.size() == 0) return; //blank line!
 
 		string name1 = split(elements[0], ":")[0];
 		string name2 = split(elements[2], ":")[0];
@@ -254,6 +257,7 @@ public:
 		for(Kernel* k : kernels)
 		{
 			cout << k->getName() << " (Time): " << k->getTime() << " (Area): " << k->getArea() << endl;;	
+			k->printParameters();
 		}
 	}
 
@@ -505,7 +509,7 @@ public:
 
 	}
 
-	void maximizeKernelSize(double fill_percent_p1 = 0.75) 
+	void inflateKernelSize(double fill_percent_p1 = 0.75) 
 	{
 		//try to fill this much percent of the wafer in phase 1
 		double filled_percent = (double)(getTotalKernelArea()) / (double)(getWaferArea()); 
@@ -733,28 +737,33 @@ public:
 		updateVisual(true);
 
 		//annealer.performAnnealing();
-		for(int i = 0; i < 9; i++)
+		for(int i = 0; i < 99; i++)
 		{
 			for(int i = 0; i < 10; i++)
 			{
-				for(int i = 0; i < 50; i++)
+				for(int i = 0; i < 100; i++)
 				{
 					annealer.performAnnealingStep();
-					printTimeAndArea();
 				}
 				annealer.reduceTemp();
 				kernels = annealer.getBlocks();
-				updateVisual();
+		//		printTimeAndArea();
+				updateVisual(false);
 				if(annealer.getTemp() < 1)
 					break;
 			}
-			printTimeAndArea();
+//			printTimeAndArea();
 			annealer.WSEcostFunction();
 			annealer.printTemp();
 			annealer.printCost();
-			updateVisual(true);
-			if(annealer.getTemp() < 1)
+			updateVisual();
+			if(annealer.equilibriumReached() || annealer.getTemp() < 1)
+			{
+				cout << "EXIT CRITERIA MET..." << endl;
+				updateVisual(true);
+				annealer.printResults();
 				return;
+			}
 		}
 	}
 

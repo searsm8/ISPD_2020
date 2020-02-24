@@ -93,11 +93,6 @@ vector < pair<int, int> > getShapes() { return shapes; }
 		//for base level wrappers, the dimensions are equal to the block it contains
 		w_width = base_block->getWidth();
 		w_height= base_block->getHeight();
-
-		//set the block x and y
-		base_block->setX(x);
-		base_block->setY(y);
-
 	}
 
 	//set the shapes equal to the kernel dimensions in
@@ -114,12 +109,12 @@ vector < pair<int, int> > getShapes() { return shapes; }
 			shapes.push_back(pair<int, int>(possible_blocks[i]->getHeight(), possible_blocks[i]->getWidth()));
 
 
-		printShapes();
+		//printShapes();
 	}
 
 	void updateDimensions()
 	{
-		cout << "updateDimensions()\n";
+//cout << "updateDimensions()\n";
 		if(base_level)
 			updateDimensionsBaseBlock();
 
@@ -139,11 +134,11 @@ vector < pair<int, int> > getShapes() { return shapes; }
 
 	void updatePosition()
 	{
-		cout << "updatePosition(): (" << x << ", " << y << ")\n";
+//cout << "updatePosition(): (" << x << ", " << y << ")\n";
 		//recursive base case
 		if(base_level)
 		{
-			cout << "base_level\n";
+//cout << "base_level\n";
 			base_block->setX(x);
 			base_block->setY(y);
 			return;
@@ -219,7 +214,7 @@ vector < pair<int, int> > getShapes() { return shapes; }
 			}
 		}
 
-		printShapes();
+		//printShapes();
 	} //end combineShapes()
 
 	int getShapeArea(int index)
@@ -235,7 +230,7 @@ vector < pair<int, int> > getShapes() { return shapes; }
 		//recursive base case
 		if(base_level)
 		{
-			cout << "solidifyShape() base block!\n";
+//cout << "solidifyShape() base block!\n";
 			//given the desired shape of this kernel, apply correct EP
 			int size = base_block->getPossibleKernels().size();
 			if(index < size)
@@ -257,7 +252,7 @@ vector < pair<int, int> > getShapes() { return shapes; }
 			return;	
 		}
 
-		cout << "\n\nSetting shape of Block_Wrapper: (" <<shapes[index].first<<", "<<shapes[index].second<<")\n\n";
+//cout << "\n\nSetting shape of Block_Wrapper: (" <<shapes[index].first<<", "<<shapes[index].second<<")\n\n";
 
 		//else, it is not base_level
 		setWidth(shapes[index].first);

@@ -1,12 +1,13 @@
-//Dblock.h
+//Xblock.h
 //author: searsm8
 //
 //extends Kernel
-//represents a dblock
+//represents a block which contains internal conv kernels
+//such as dblock or cblock
 //
 
-#ifndef _Dblock
-#define _Dblock
+#ifndef _Xblock
+#define _Xblock
 
 #include "Kernel.h"
 #include "Conv.h"
@@ -14,23 +15,36 @@
 
 using namespace std;
 
-class Dblock : public Kernel
+class Xblock : public Kernel
 {
 private:
 public:
-	//each Dblock holds 3 Convolutional Kernels
+	//each Xblock holds 3 Convolutional Kernels
 	vector<Conv> convs;
 
 	//constructors
-	Dblock()
+	Xblock()
 	{}
 
-	Dblock(int H, int W, int F, int h, int w, int c1, int c2, int c3, int k1, int k2, int k3)
+	Xblock(int H, int W, int F, string type)
 	{
-		//initialize 3 internal convolutional kernels
-		convs.push_back(Conv(H, W, 1, 1, F, F/4, 1, h, w, c1, k1));
-		convs.push_back(Conv(H, W, 3, 3, F/4, F/4, 1, h, w, c2, k2));
-		convs.push_back(Conv(H, W, 1, 1, F/4, F, 1, h, w, c3, k3));
+		int i = 1; //initial EP value
+		//initialize internal convolutional kernels
+
+		if(type == "dblock")
+		{
+			convs.push_back(Conv(H, W, 1, 1, F,   F/4, 1, i, i, i, i));
+			convs.push_back(Conv(H, W, 3, 3, F/4, F/4, 1, i, i, i, i));
+			convs.push_back(Conv(H, W, 1, 1, F/4, F,   1, i, i, i, i));
+		}
+
+		if(type == "cblock")
+		{
+			convs.push_back(Conv(H, W, 1, 1, F,   F/4, 1, i, i, i, i));
+			convs.push_back(Conv(H, W, 3, 3, F/4, F/4, 2, i, i, i, i));
+			convs.push_back(Conv(H, W, 1, 1, F/4, F,   1, i, i, i, i));
+			convs.push_back(Conv(H, W, 1, 1, F/2, F,   2, i, i, i, i));
+		}
 		
 		//initialize formal parameters
 		FP.insert(pair<string, int>("H", H));	
@@ -38,16 +52,10 @@ public:
 		FP.insert(pair<string, int>("F", F));	
 
 		//initialize Execution paramaters
-		EP.insert(pair<string, int>("h", h));	
-		EP.insert(pair<string, int>("w", w));	
-		EP.insert(pair<string, int>("c", c1));	
-		EP.insert(pair<string, int>("k", k1));	
-		EP.insert(pair<string, int>("c1", c1));	
-		EP.insert(pair<string, int>("k1", k1));	
-		EP.insert(pair<string, int>("c2", c2));	
-		EP.insert(pair<string, int>("k2", k2));	
-		EP.insert(pair<string, int>("c3", c3));	
-		EP.insert(pair<string, int>("k3", k3));	
+		EP.insert(pair<string, int>("h", i));	
+		EP.insert(pair<string, int>("w", i));	
+		EP.insert(pair<string, int>("c", i));	
+		EP.insert(pair<string, int>("k", i));	
 	
 		height = -1;
 		width = -1;
@@ -99,28 +107,55 @@ public:
 
 	int computeHeight()
 	{
-		height = max({convs[0].computeHeight(), convs[1].computeHeight(), convs[2].computeHeight()});
-		updateY();
-		return height;
+		int max = 0;
+		int next;
+		for(int i = 0; i < convs.size(); i++)
+		{
+			next = convs[i].computeHeight();
+			if(next > max)
+				max = next;
+		}
+		height = max;
+	//	updateY();
+		return max;
 	}
 
 	int computeWidth()
 	{
-		width = convs[0].computeWidth() + convs[1].computeWidth() + convs[2].computeWidth();
-		updateX();
-	       return width;	
+		int total_width = 0;
+		for(int i = 0; i < convs.size(); i++)
+			total_width += convs[i].computeWidth();
+		width = total_width;
+	//	updateX();
+	       return total_width;	
 	}
 
 	int computeTime()
 	{
-		time = max({convs[0].computeTime(), convs[1].computeTime(), convs[2].computeTime()});
-		return time;
+		int max = 0;
+		int next;
+		for(int i = 0; i < convs.size(); i++)
+		{
+			next = convs[i].computeTime();
+			if(next > max)
+				max = next;
+		}
+		time = max;
+		return max;
 	}
 	
 	int computeMemory()
 	{
-		memory = max({convs[0].computeMemory(), convs[1].computeMemory(), convs[2].computeMemory()});
-		return memory;
+		int max = 0;
+		int next;
+		for(int i = 0; i < convs.size(); i++)
+		{
+			next = convs[i].computeMemory();
+			if(next > max)
+				max = next;
+		}
+		memory = max;
+		return max;
 	}
 
 	//function to update all performance metrics
@@ -131,8 +166,6 @@ public:
 		computeTime();
 		computeMemory();
 	}
-
-	string getType() { return "dblock"; }
 
 	string getParamString()
 	{
@@ -148,7 +181,7 @@ public:
 
 	void setRotation(int new_rot)
 	{
-//cout << "Dblock setRotation("<< new_rot << ")\n";
+//cout << "Xblock setRotation("<< new_rot << ")\n";
 		Kernel::setRotation(new_rot);
 		for(int i = 0; i < convs.size(); i++)
 			convs[i].setRotation(new_rot);
@@ -176,16 +209,16 @@ public:
 		if(rotation == 0)
 		{
 			convs[0].x = new_X;
-			new_X += convs[0].width;
-			convs[1].x = new_X;
-			new_X += convs[1].width;
-			convs[2].x = new_X;
+			for(int i = 0; i < convs.size()-1; i++)
+			{	
+				new_X += convs[i].width;
+				convs[i+1].x = new_X;
+			}
 		}
 		else
 		{
-			convs[0].x = new_X;
-			convs[1].x = new_X;
-			convs[2].x = new_X;
+			for(int i = 0; i < convs.size(); i++)
+				convs[i].x = new_X;
 		}
 	}
 
@@ -194,17 +227,17 @@ public:
 		int new_Y = y;
 		if(rotation == 0)
 		{
-			convs[0].y = new_Y;
-			convs[1].y = new_Y;
-			convs[2].y = new_Y;
+			for(int i = 0; i < convs.size(); i++)
+				convs[i].y = new_Y;
 		}
 		else
 		{
 			convs[0].y = new_Y;
-			new_Y += convs[0].width;
-			convs[1].y = new_Y;
-			new_Y += convs[1].width;
-			convs[2].y = new_Y;
+			for(int i = 0; i < convs.size()-1; i++)
+			{
+				new_Y += convs[i].width;
+				convs[i+1].y = new_Y;
+			}
 		}
 	}
 
@@ -222,15 +255,13 @@ public:
 		vector<vector<int>> rects;
 		if(rotation == 0)
 		{
-			rects.push_back(vector<int>{ convs[0].x, convs[0].y, convs[0].width, convs[0].height});
-			rects.push_back(vector<int>{ convs[1].x, convs[1].y, convs[1].width, convs[1].height});
-			rects.push_back(vector<int>{ convs[2].x, convs[2].y, convs[2].width, convs[2].height});
+			for(int i = 0; i < convs.size(); i++)
+				rects.push_back(vector<int>{ convs[i].x, convs[i].y, convs[i].width, convs[i].height});
 		}
 		else
 		{
-			rects.push_back(vector<int>{ convs[0].x, convs[0].y, convs[0].height, convs[0].width});
-			rects.push_back(vector<int>{ convs[1].x, convs[1].y, convs[1].height, convs[1].width});
-			rects.push_back(vector<int>{ convs[2].x, convs[2].y, convs[2].height, convs[2].width});
+			for(int i = 0; i < convs.size(); i++)
+				rects.push_back(vector<int>{ convs[i].x, convs[i].y, convs[i].height, convs[i].width});
 		}
 		return rects;
 	}
@@ -344,7 +375,7 @@ public:
 		
 	bool changeWidth(bool increase=true)
 	{
-	//	cout << "changeWidth() of Dblock: " << getName() << endl;
+	//	cout << "changeWidth() of Xblock: " << getName() << endl;
 		Kernel* k;
 	        if(increase) k = getLongestConv();
 		else k = getShortestConv();
@@ -354,7 +385,7 @@ public:
 
 	bool changeHeight(bool increase=true)
 	{		
-	//	cout << "changeHeight() of Dblock: " << getName() << endl;
+	//	cout << "changeHeight() of Xblock: " << getName() << endl;
 		string EP_to_increase = "c";
 
 		if(increase)
@@ -384,20 +415,20 @@ public:
 
 	Kernel* createCopy()
 	{
-	//	cout << "createCopy() Dblock:\n";
+	//	cout << "createCopy() Xblock:\n";
 	//	cout << "Original: " << this << endl;
 
-		Dblock* newBlock = new Dblock(*this);
-	//	cout << "New Dblock: " << newBlock << endl;
+		Xblock* newBlock = new Xblock(*this);
+	//	cout << "New Xblock: " << newBlock << endl;
 		
 		return newBlock;
 	}
 
 	void copyDataFrom(Kernel* k)
 	{
-	//	cout << "Dblock copyDataFrom()\n";
+	//	cout << "Xblock copyDataFrom()\n";
 	//	Kernel::copyDataFrom(k);
-		this->convs = dynamic_cast<Dblock*>(k)->convs;
+		this->convs = dynamic_cast<Xblock*>(k)->convs;
 
 	}
 
