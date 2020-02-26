@@ -194,7 +194,7 @@ public:
 	{
 //cout << "computePossibleKernels()\n";
 
-		vector<double> target_ARs = {0.25, 0.33, 0.5, 1}; 
+		vector<double> target_ARs = {0.1, 0.25, 0.33, 0.5, 0.75,  1}; 
 
 		for( int i = 0; i < target_ARs.size(); i++)
 		{
@@ -304,7 +304,7 @@ public:
 			computePerformance();
 		}
 //cout << "target_AR: " << target_AR << " actual: " << getAR() << endl;
-		printPerformance();
+//printPerformance();
 
 	}
 
@@ -354,7 +354,7 @@ public:
 	virtual bool changeHeight(bool increase) { return true; }
 	
 //COMPUTATORS
-	int computeHeight() { cout << "-1\n";  return -1; }
+	int computeHeight() { return -1; }
 
 	int computeWidth() { return -1; }
 
@@ -369,11 +369,13 @@ public:
 	double computeL1Distance()
 	{
 		double dist = 0;
+		pair<double, double> c1 = getCenter();
 		for(int i = 0; i < next_kernels.size(); i++)
-	       	dist += abs((next_kernels[i]->getX()+next_kernels[i]->getWidth()/2)
-			- (this->getX()+this->getWidth()/2) )
-			+ abs((next_kernels[i]->getY()+next_kernels[i]->getHeight()/2)
-			- (this->getY()+this->getHeight()/2) );
+		{
+			pair<double, double> c2 = next_kernels[i]->getCenter();
+			dist += abs(c1.first - c2.first) + abs(c1.second - c2.second); 
+
+		}
 		return dist;
 
 	}

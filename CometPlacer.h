@@ -11,6 +11,9 @@
 //if SDL is not installed, comment this #define
 #define VISUALIZE
 
+//DEBUG controls print statements
+//#define DEBUG
+
 #ifdef VISUALIZE
 #include "visual/VisualizeWSE.h"
 #endif
@@ -80,7 +83,9 @@ public:
 			new_AR=.25;
 
 			kernels[i]->setAR(new_AR);
-			cout << kernels[i]->getName() << " AR: " << new_AR << endl;
+#ifdef DEBUG
+	cout << kernels[i]->getName() << " AR: " << new_AR << endl;
+#endif
 		}
 
 		setInitialPlacement();
@@ -343,7 +348,9 @@ public:
 			{
 				if(kernels[i]->isOverlapping(kernels[j]))
 				{
-					cout << kernels[i]->getName() << " is overlapping with " << kernels[j]->getName() << endl;
+#ifdef DEBUG
+	cout << kernels[i]->getName() << " is overlapping with " << kernels[j]->getName() << endl;
+#endif
 					legalPlacement = false;
 				}
 			}
@@ -432,7 +439,9 @@ public:
 
 	void increaseAllEP(string key, int increment=1)
 	{
-		cout << "\nincreaseAllEP("<< key << ", " << increment << ")\n";
+#ifdef DEBUG
+	cout << "\nincreaseAllEP("<< key << ", " << increment << ")\n";
+#endif
 		for(int i = 0; i < kernels.size(); i++)
 		{
 //			cout << "AR of " << kernels[i]->getName() << ": " << kernels[i]->getAR() << endl;
@@ -531,7 +540,7 @@ public:
 				break;
 			}
 			k->computePerformance();
-			//printARs();
+//printARs();
 					
 
 		//	equalizeKernelTimes(0.05);
@@ -540,7 +549,6 @@ public:
 //	cout << "max_time: " << getLongestTime() << endl;
 //	printTimeAndArea();
 			filled_percent = (double)(getTotalKernelArea()) / (double)(getWaferArea()); 
-			cout << "filled_percent: " << filled_percent  << endl << endl;
 
 			if(filled_percent > fill_percent_p1)
 				updateVisual();
@@ -558,7 +566,8 @@ public:
 
 		for(int i = 0; i < kernels.size(); i++)
 			kernels[i]->setTargetTime(longest_time);
-	}
+cout << "filled_percent: " << filled_percent  << endl << endl;
+	}//end inflateKernelSize()
 
 	//for each kernel, slightly increase its size until
 	//it is very close to targetAR
@@ -614,7 +623,8 @@ public:
 			}
 
 			cout << k->getName() << " meets memory contraints with " << k->getMemory() << " kB/core!\n";
-			k->printPerformance();
+
+	//k->printPerformance();
 		}
 
 		return true;
@@ -719,19 +729,6 @@ public:
 	void performAnnealing()
 	{
 		annealer.setBlocks(kernels);
-//		for(int i = 0; i < kernels.size(); i++)
-//		{
-//			Block_Wrapper<Kernel> wrapper = Block_Wrapper<Kernel>(kernels[i]);
-//			for(int j = 0; j < wrapper.getShapes().size(); j++)
-//			{
-//				kernels[i]->nextShape();
-//				updateVisual(true);
-//			}
-//
-//		}
-//
-//	return;
-
 		annealer.initializeOps();
 		annealer.initializeTemp();
 		updateVisual(true);
@@ -759,6 +756,7 @@ public:
 			updateVisual();
 			if(annealer.equilibriumReached() || annealer.getTemp() < 1)
 			{
+				cout << "\n**********\n";
 				cout << "EXIT CRITERIA MET..." << endl;
 				updateVisual(true);
 				annealer.printResults();

@@ -43,57 +43,16 @@ int main(int argc, char** argv)
 
 	CometPlacer placer = CometPlacer(kgraph, output, wirepenalty, timelimit, width, height);
 
-
-	//placer.tryShapes();
-
 	placer.updateVisual();
-	placer.printTimeAndArea();
-	placer.printKernels();
-
+	//placer.printTimeAndArea();
 	//placer.printKernels();
-	//placer.printInfo();
-//	cout << "avg_time: " << placer.computeAvgTime() << endl;
-//	cout << "max_time: " << placer.getMaxTime() << endl;
-//	placer.updateVisual();
-
-//	placer.equalizeKernelTimes();
-//	cout << "avg_time: " << placer.computeAvgTime() << endl;
-//	cout << "max_time: " << placer.getMaxTime() << endl;
-//	placer.updateVisual(); 
 
 	placer.enforceMemoryConstraint();
 	placer.updateVisual(true); 
 	placer.inflateKernelSize(0.8);
 	placer.updateVisual(true); 
-//	placer.updateVisual(true); 
-//	placer.computePossibleShapes();
-//	placer.updateVisual(true); 
-//	for(int i = 0; i < 7; i++)
-//	{
-//		placer.cycleShape(0);
-//		placer.updateVisual(true); 
-//	}
-
-//	placer.printKernels();
-//	placer.achievePreciseAR(0.01);
-//	cout << "avg_time: " << placer.computeAvgTime() << endl;
-//	cout << "max_time: " << placer.getMaxTime() << endl;
-//	placer.updateVisual(); 
-//	placer.printARs();
-
-//	placer.fitKernelsToWafer();
-//	placer.updateVisual(); 
 
 	placer.performAnnealing();
-
-//	placer.printTimeAndArea();
-//	placer.updateVisual(); 
-//	placer.changeAllAR(2.0);
-//	placer.printTimeAndArea();
-//	placer.updateVisual(); 
-//
-//	placer.fitKernelsToWafer();
-//	placer.updateVisual(); 
 
 	return 1;
 }

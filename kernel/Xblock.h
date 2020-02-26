@@ -318,8 +318,9 @@ public:
 			if(next_EP < min_EP)
 				min_EP = next_EP;
 		}
-
+#ifdef DEBUG
 	cout << getName() << ": setEPtoNextValue("<<EP_key<<", "<<increase<<") to "<<next_EP<<endl;
+#endif
 
 		for(int i = 0; i < convs.size(); i++)
 		{
@@ -334,8 +335,10 @@ public:
 		}
 		else
 			cout << "!!!!No changes made for setNextEP(" << EP_key << ") to " << min_EP <<  "\n";
+#ifdef DEBUG
 		printParameters();
 		printPerformance();
+#endif
 
 		return change_made;
 		

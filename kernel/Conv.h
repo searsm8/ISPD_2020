@@ -172,18 +172,18 @@ public:
 		
 		if(my_FP == 0)
 		{
-			cout << "INVALID EP_key in Conv.h getNextEPValue(): " << EP_key << endl;
+			cout << getName() << ": " << "INVALID EP_key in Conv.h getNextEPValue(): " << EP_key << endl;
 			return orig_EP;
 		}
 
 		if(increase && orig_EP >= my_FP)
 		{
-			cout << "No increase possible for EP: " << EP_key << endl;
+			cout << getName() << ": " << "No increase possible for EP: " << EP_key << endl;
 			return orig_EP;
 		}
 		if(!increase && orig_EP <= 1)
 		{
-			cout << "No decrease possible for EP: " << EP_key << endl;
+			cout << getName() << ": " << "No decrease possible for EP: " << EP_key << endl;
 			return orig_EP;
 		}
 		

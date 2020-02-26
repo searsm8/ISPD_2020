@@ -160,7 +160,9 @@ public:
 			new_cost = costFunction();
 		
 			delta = new_cost - prev_cost;
+#ifdef DEBUG
 	cout << "delta: " << delta << endl;
+#endif
 			deltas.push_back(delta);
 			
 			acceptMove(new_cost); //always accept the move during initialization	
@@ -214,7 +216,7 @@ public:
 	
 	void performMove()
 	{	
-		printTemp();
+		//printTemp();
 		prev_move_num = 0;
 		switch(pickMove())
 		{
@@ -250,7 +252,9 @@ public:
 	//swaps two random adjacent blocks
 	void move1()
 	{
+#ifdef DEBUG
 		cout << "move1()" << endl;
+#endif
 
 		move1_index = rand() % (blocks.size()-1);
 		prev_move_num = 1;
@@ -271,7 +275,9 @@ public:
 	//complements a random operator chain
 	void move2()
 	{
+#ifdef DEBUG
 		cout << "move2()" << endl;
+#endif
 		//choose a random op string until a non-empty one is found
 		int i = rand() % (ops.size()-1);
 		while(ops[i].size() == 0)
@@ -296,7 +302,9 @@ public:
 	//If both are illegal moves, pick another random op 
 	void move3()
 	{
+#ifdef DEBUG
 		cout << "move3()" << endl;
+#endif
 		updatePreviousOpsCount(); //ensure that the op counts are correct!
 		
 		//attempt to swap a cell and operator. If move is not legal, pick another random op string
@@ -336,7 +344,9 @@ public:
 	//increase or decrease kernel size!
 	void move4()
 	{
+#ifdef DEBUG
 		cout << "move4()" << endl;
+#endif
 		//if(computeTotalWirelength() * wirepenalty < getLongestTime())
 		if(rand()%2 == 0)
 //		if(true)
@@ -345,7 +355,9 @@ public:
 			for(int i = 0; i < blocks.size(); i++)
 			{
 				Block* b = getLongestBlock();
-				cout << "Increasing Block: " << b->getName() << endl;
+#ifdef DEBUG
+	cout << "Increasing Block: " << b->getName() << endl;
+#endif
 				b->printPerformance();
 				b->increaseSize();
 				b->computePerformance();
@@ -370,7 +382,9 @@ public:
 	//give a block a new random AR and orientation
 	void move5()
 	{
+#ifdef DEBUG
 		cout << "move5()" << endl;
+#endif
 		random_device rd("default");
 		mt19937 gen{rd()};
 		
@@ -394,10 +408,12 @@ public:
 		for(int i = 1; i < ops.size(); i++)	
 			previous_ops_count[i] = previous_ops_count[i-1] + ops[i].size();
 
+#ifdef DEBUG
 		cout << "ops_count: ";
 		for(int i = 0; i < previous_ops_count.size(); i++)	
 			cout << previous_ops_count[i] << " ";
 		cout << endl; 
+#endif
 	}
 
 	//evaluateMove compares the new layout's area and wirelength to the previous.
@@ -406,16 +422,15 @@ public:
 	bool evaluateMove()
 	{
 		layout = findBestLayout();	
+		double new_cost = costFunction();
+		double delta = new_cost - prev_cost;
 
+#ifdef DEBUG
 		cout << "Layout dims: (" << layout->getWidth() <<", " << layout->getHeight() << ")" <<endl;
 		cout << "Layout Area: " << layout->getArea() << endl;
 		cout << "Temp: " << temp << endl;
-		
-		double new_cost = costFunction();
 		cout << "Cost difference: " << new_cost-prev_cost << endl;
-
-		double delta = new_cost - prev_cost;
-
+#endif
 		//check if the new layout is better
 		if(delta <= 0)
 		{
@@ -431,8 +446,10 @@ public:
 			int p = 100000;		
 			float roll = (float)(rand()%p) / (float)p; 
 
-			cout << "Pr_accepting : " << Pr_accepting;
-			cout << "\t roll: " << roll << endl;
+#ifdef DEBUG
+	cout << "Pr_accepting : " << Pr_accepting;
+	cout << "\t roll: " << roll << endl;
+#endif
 
 			if(roll < Pr_accepting) //chance to accept or reject
 			{
@@ -452,7 +469,9 @@ public:
 
 	void acceptMove(double new_cost)
 	{
+#ifdef DEBUG
 		cout << "***acceptMove()\n\n";
+#endif
 	//	if(new_cost > prev_cost) return;
 		reject_count = 0;
 
@@ -467,7 +486,9 @@ public:
 
 	void rejectMove()
 	{
+#ifdef DEBUG
 		cout << "***rejectMove()\n\n";
+#endif
 		reject_count++;
 
 		for(int i = 0; i < prev_blocks.size(); i++)
@@ -565,15 +586,16 @@ public:
 
 		int longest_time = getLongestTime();
 
-cout << "Wirelength: " << wirelen << "*" << wirepenalty << " = "<< wirelen*wirepenalty << endl;
-cout << "Longest Time: " << longest_time << endl;
 //		double cost = longest_time + wirelen*wirepenalty + alpha*layout->getArea();
 		double cost = longest_time + wirelen*wirepenalty;
 		//impose a penalty for shapes that aren't within the allowed area! 
 		cost *= max(1.0, pow(layout->getWidth() / max_width, 3));
 		cost *= max(1.0, pow(layout->getHeight() / max_height, 3));
-
+#ifdef DEBUG
+cout << "Wirelength: " << wirelen << "*" << wirepenalty << " = "<< wirelen*wirepenalty << endl;
+cout << "Longest Time: " << longest_time << endl;
 cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
+#endif
 		return cost;
 	}
 
@@ -588,6 +610,7 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 
 		double cost = longest_time + wirelen*wirepenalty;
 
+		cout << "\n**********\n";
 		cout << "WSE competition cost: " << cost << endl;
 		return cost;
 	}
