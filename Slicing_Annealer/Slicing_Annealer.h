@@ -34,7 +34,7 @@ private:
 	int wirepenalty;
 
 	vector<int> move_weights; //determines how often each type of move is done
-	double reduction_factor = 0.97; //factor that reduces annealing temperature
+	double reduction_factor = 0.995; //factor that reduces annealing temperature
 	int steps_per_temp = 100; //number of steps before reducing temperature
 	double temp; 	//current annealing temperature
 
@@ -129,6 +129,7 @@ public:
 			prev_blocks.push_back(blocks[i]->createCopy());
 			prev_ops.push_back(ops[i]);
 		}
+
 	}
 
 
@@ -140,6 +141,9 @@ public:
 	{
 		for(int i = 0; i < blocks.size(); i++)
 			blocks[i]->computePossibleKernels();
+
+		layout = findBestLayout();
+		prev_layout = layout;
 
 		int num_initialize_moves = blocks.size()*100;
 
@@ -472,8 +476,8 @@ public:
 #ifdef DEBUG
 		cout << "***acceptMove()\n\n";
 #endif
-	//	if(new_cost > prev_cost) return;
-		reject_count = 0;
+		if(new_cost !=  prev_cost)
+			reject_count = 0;
 
 		for(int i = 0; i < blocks.size(); i++)
 		{
@@ -481,7 +485,8 @@ public:
 			prev_ops[i] = string(ops[i]);
 		}
 		prev_cost = new_cost;
-		prev_layout = layout;
+		delete prev_layout;
+		prev_layout = layout;// new Block_Wrapper<Kernel>(*layout);
 	}
 
 	void rejectMove()
@@ -500,7 +505,8 @@ public:
 		if(prev_move_num == 1)
 			undoMove1();
 
-		layout = findBestLayout();
+		delete layout;
+		layout = new Block_Wrapper<Kernel>(*findBestLayout());
 
 	}
 

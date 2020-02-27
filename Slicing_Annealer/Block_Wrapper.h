@@ -47,6 +47,7 @@ public:
 //CONSTRUCTORS
 	
 	//Block_Wrapper() {} //default constructor should not be used?
+//constructor for base level wrapper
 	Block_Wrapper(Block* b)
 	: base_level(true), base_block(b), x(0), y(0)
 	{
@@ -54,11 +55,26 @@ public:
 	}
 	
 	
+//constructor for non-base level wrapper
 	Block_Wrapper(Block_Wrapper* a, Block_Wrapper* b, char initCut='h')
 	: base_level(false), w1(a), w2(b), cut(initCut), x(0), y(0)
 	{
 		combineShapes();
 	}
+
+/*DESTRUCTOR
+ *the block wrapper should recursively destroy all lower level
+ *wrappers below it in order to prevent a memory leak
+ */
+	~Block_Wrapper()
+	{
+		if(!base_level)
+		{
+			delete w1;
+			delete w2;
+		}
+	}
+
 	
 //ACCESSORS
 	

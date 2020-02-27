@@ -9,9 +9,11 @@
 //if VISUALIZE is defined, then the SDL library
 //will be used to create a visualization
 //if SDL is not installed, comment this #define
-#define VISUALIZE
+//
+//#define VISUALIZE
 
 //DEBUG controls print statements
+//
 //#define DEBUG
 
 #ifdef VISUALIZE
