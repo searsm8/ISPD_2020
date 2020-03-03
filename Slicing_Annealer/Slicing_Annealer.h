@@ -104,7 +104,7 @@ public:
 	void printResults()
 	{
 		cout << "\n******RESULTS******\n";
-		cout << "Final Cost: " << costFunction();
+		cout << "Final Cost: " << costFunction() << endl;
 
 	}
 

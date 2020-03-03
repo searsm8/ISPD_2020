@@ -14,6 +14,8 @@
 #include <cmath>
 #include <vector>
 #include <ctime>
+#include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -77,6 +79,11 @@ public:
 		cout << endl << endl;	
 	}	
 
+	virtual vector<int> getParameters()
+       	{
+		return vector<int>();
+	}
+
 	virtual void printPerformance()
 	{
 		if(!print) return;
@@ -92,13 +99,13 @@ public:
 
 	string getName() { return name; }
 
-	virtual string getParamString() { return "Kernel.h getParamString()"; }
-
 	int getID() { return ID; }
 
 	int getX() { return x; }
 
 	int getY() { return y; }
+
+	int getRotation() { return rotation; }
 
 	int getLeft() { return x; }
 

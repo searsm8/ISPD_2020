@@ -5,15 +5,15 @@ clean:
 	rm CometPlacer.out
 
 run:	
-	./CometPlacer.out kgraph=benchmarks/kgraph.txt output=output wirepenalty=100 timelimit=60 width=633 height=633
+	./CometPlacer.out kgraph=benchmarks/kgraph.txt output=results/output.txt wirepenalty=100 timelimit=60 width=633 height=633
 run2:	
-	./CometPlacer.out kgraph=benchmarks/kgraph2.txt output=output wirepenalty=100 timelimit=60 width=633 height=633
+	./CometPlacer.out kgraph=benchmarks/kgraph2.txt output=results/output.txt wirepenalty=100 timelimit=60 width=633 height=633
 
 run4:
-	./CometPlacer.out kgraph=benchmarks/kgraph4.txt output=output wirepenalty=100 timelimit=60 width=633 height=633
+	./CometPlacer.out kgraph=benchmarks/kgraph4.txt output=results/output.txt wirepenalty=100 timelimit=60 width=633 height=633
 	
 run18:
-	./CometPlacer.out kgraph=benchmarks/kgraph18.txt output=output wirepenalty=100 timelimit=60 width=633 height=633
+	./CometPlacer.out kgraph=benchmarks/kgraph18.txt output=results/output.txt wirepenalty=100 timelimit=60 width=633 height=633
 
 run_single:	
-	./CometPlacer.out kgraph=benchmarks/single.txt output=output wirepenalty=100 timelimit=60 width=633 height=633
+	./CometPlacer.out kgraph=benchmarks/single.txt output=results/output.txt wirepenalty=100 timelimit=60 width=633 height=633

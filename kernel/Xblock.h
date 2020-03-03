@@ -26,9 +26,10 @@ public:
 	Xblock()
 	{}
 
-	Xblock(int H, int W, int F, string type)
+	Xblock(int H, int W, int F, string X_type)
 	{
 		int i = 1; //initial EP value
+		type = X_type;;
 		//initialize internal convolutional kernels
 
 		if(type == "dblock")
@@ -167,18 +168,6 @@ public:
 		computeMemory();
 	}
 
-	string getParamString()
-	{
-		string params = getName() + ": " + getType() + "( H:" +
-		to_string(FP["H"]) + " W:" + to_string(FP["W"]) + " F:" + to_string(FP["F"]) + " "; 
-	       	params += "h:" + to_string(convs[0].EP["h"]) + " w:" + to_string(convs[0].EP["w"]) + " ";  
-		for(Conv c : convs)
-	       		params += "c:"+to_string(c.EP["c"]) + " k:" + to_string(c.EP["k"]) + " "; 
-		params += ")\n";
-
-		return params;
-	}
-
 	void setRotation(int new_rot)
 	{
 //cout << "Xblock setRotation("<< new_rot << ")\n";
@@ -290,6 +279,25 @@ public:
 		Kernel::printParameters();
 		for(int i = 0; i < convs.size(); i++)
 			convs[i].printParameters();
+	}
+
+	vector<int> getParameters()
+	{
+		vector<int> params;
+		//add Formal Parameters
+		params.push_back(getFP("H"));
+		params.push_back(getFP("W"));
+		params.push_back(getFP("F"));
+
+		//add Formal Parameters
+		params.push_back(getEP("h"));
+		params.push_back(getEP("w"));
+		for(int i = 0; i < convs.size(); i++)
+			params.push_back(convs[i].getEP("c"));
+		for(int i = 0; i < convs.size(); i++)
+			params.push_back(convs[i].getEP("k"));
+
+		return params;
 	}
 
 	double computeNetBenefitOfIncreasing(string EP_key)
