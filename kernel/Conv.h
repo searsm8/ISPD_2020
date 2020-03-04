@@ -17,21 +17,6 @@ public:
 
 	Conv(int H, int W, int R, int S, int C, int K, int T, int h, int w, int c, int k)
 	{
-		//initialize all Formal Parameters
-/*		FP.insert(pair<string, int>("H", H));
-		FP.insert(pair<string, int>("W", W));
-		FP.insert(pair<string, int>("R", R));
-		FP.insert(pair<string, int>("S", S));
-		FP.insert(pair<string, int>("C", C));
-		FP.insert(pair<string, int>("K", K));
-		FP.insert(pair<string, int>("T", T));
-
-		//initialize all Execution parameters
-		EP.insert(pair<string, int>("h", h));
-		EP.insert(pair<string, int>("w", w));
-		EP.insert(pair<string, int>("c", c));
-		EP.insert(pair<string, int>("k", k));
-	*/
 		FP["H"] = H;
 		FP["W"] = W;
 		FP["R"] = R;
@@ -44,6 +29,9 @@ public:
 		EP["w"] = w;	
 		EP["c"] = c;	
 		EP["k"] = k;	
+
+		type = "conv";
+
 	}
 
 	int computeHeight()

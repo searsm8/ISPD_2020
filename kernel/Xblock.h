@@ -19,24 +19,26 @@ class Xblock : public Kernel
 {
 private:
 public:
-	//each Xblock holds 3 Convolutional Kernels
+	//each Xblock holds Convolutional Kernels
 	vector<Conv> convs;
+	static int xblock_count;
 
 	//constructors
-	Xblock()
-	{}
 
 	Xblock(int H, int W, int F, string X_type)
 	{
 		int i = 1; //initial EP value
-		type = X_type;;
+		type = X_type;
 		//initialize internal convolutional kernels
 
 		if(type == "dblock")
 		{
-			convs.push_back(Conv(H, W, 1, 1, F,   F/4, 1, i, i, i, i));
-			convs.push_back(Conv(H, W, 3, 3, F/4, F/4, 1, i, i, i, i));
-			convs.push_back(Conv(H, W, 1, 1, F/4, F,   1, i, i, i, i));
+			Conv c1 = Conv(H, W, 1, 1, F,   F/4, 1, i, i, i, i);
+			convs.push_back(c1);
+			Conv c2 = Conv(H, W, 3, 3, F/4, F/4, 1, i, i, i, i);
+			convs.push_back(c2);
+			Conv c3 = Conv(H, W, 1, 1, F/4, F,   1, i, i, i, i);
+			convs.push_back(c3);
 		}
 
 		if(type == "cblock")
@@ -62,6 +64,10 @@ public:
 		width = -1;
 		time = -1;
 		memory = -1;
+
+		xblock_count++;
+		cout << "Xblock constructor: " << name << " (" << type << ") count: " << xblock_count << endl;
+		
 	}
 	
 	//take in a new Execution Parameter
@@ -445,4 +451,7 @@ public:
 
 
 };
+
+int Xblock::xblock_count = 0;
+
 #endif

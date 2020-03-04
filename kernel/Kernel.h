@@ -56,10 +56,18 @@ public:
 		ID = kernel_count++;
 		name = "Kernel " + to_string(ID);
 		type = "Kernel";
+		cout << "Kernel constructor: " << name << " : " << type << endl;
 		target_AR = 1;
 
 		for(int i = 0; i < 3; i++)
 			colors.push_back(rand()%255);
+	}
+
+	//destructor
+	~Kernel()
+	{
+		cout << "Kernel DESTRUCTOR: " << name << " : " << type << endl;
+		kernel_count--;
 	}
 
 	virtual void printParameters()
@@ -95,6 +103,8 @@ public:
 	}
 
 //ACCESSORS
+	static int getKernelCount() { return kernel_count; }
+
 	string getType() { return type; }
 
 	string getName() { return name; }

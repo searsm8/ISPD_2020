@@ -42,11 +42,14 @@ private:
 	Block_Wrapper<Block>* prev_layout;
 	double prev_cost;
 
+	vector<Block*> best_blocks;
+	vector<string> best_ops;
 	vector<Block*> prev_blocks;
 	vector<string> prev_ops;
 	vector<int> previous_ops_count;
 	vector< vector<int> > next_block_indices;
 
+	int move_count;
 	int move1_index;
 	int prev_move_num;
 	int reject_count;
@@ -59,16 +62,21 @@ public:
 	Slicing_Annealer() {}
 
 	Slicing_Annealer(int init_wirepenalty, int init_width, int init_height) 
-	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height), prev_move_num(0), reject_count(0), equilibrium_count(100)
+	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height), prev_move_num(0), reject_count(0), equilibrium_count(100), move_count(0)
 	{
 		move_weights = {70, 20, 10, 0, 0}; //determines how often each type of move is done
 	}
 
 
 //ACCESSORS
+
+	int getMoveCount() { return move_count; }
+
 	double getTemp() { return temp; }
 
 	vector<Block*> getBlocks() { return blocks; }
+
+	vector<Block*> getBestBlocks() { return best_blocks; }
 
 //MODIFIERS
 	
@@ -101,6 +109,13 @@ public:
 		cout << "Prev Cost: " << prev_cost << endl;
 	}
 
+	void printMoveCount()
+	{
+		if(!print) return;
+		cout << "Move Count: " << move_count << endl;
+	}
+
+
 	void printResults()
 	{
 		cout << "\n******RESULTS******\n";
@@ -128,6 +143,8 @@ public:
 		{
 			prev_blocks.push_back(blocks[i]->createCopy());
 			prev_ops.push_back(ops[i]);
+			best_blocks.push_back(blocks[i]->createCopy());
+			best_ops.push_back(ops[i]);
 		}
 
 	}
@@ -220,7 +237,6 @@ public:
 	
 	void performMove()
 	{	
-		//printTemp();
 		prev_move_num = 0;
 		switch(pickMove())
 		{
@@ -231,6 +247,8 @@ public:
 			case 5: move5(); break;
 			default:move1();
 		}
+
+		++move_count;
 	}
 
 	//returns a number corresponding to a move picked randomly based on weights
@@ -483,6 +501,8 @@ public:
 		{
 			prev_blocks[i]->copyDataFrom(blocks[i]);
 			prev_ops[i] = string(ops[i]);
+			best_blocks[i]->copyDataFrom(blocks[i]);
+			best_ops[i] = string(ops[i]);
 		}
 		prev_cost = new_cost;
 		delete prev_layout;
@@ -616,7 +636,6 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 
 		double cost = longest_time + wirelen*wirepenalty;
 
-		cout << "\n**********\n";
 		cout << "WSE competition cost: " << cost << endl;
 		return cost;
 	}

@@ -101,9 +101,9 @@ void drawConnection(SDL_Renderer* renderer, Kernel* k)
 
 
 
-void updateWSE(SDL_Window* window, vector<Kernel*> kernels_to_draw, int iteration=-1)
+void updateWSE(SDL_Window* window, vector<Kernel*> kernels_to_draw, int epoch_count=0)
 {
-    string title = "WSE Visualization -- Iteration " + to_string(iteration);
+    string title = "WSE Visualization -- Epoch #" + to_string(epoch_count);
     //update the window title
     SDL_SetWindowTitle(window, title.c_str());
 

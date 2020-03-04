@@ -10,6 +10,12 @@
 #include <fstream>
 #include <random>
 
+//used to track program execution time
+std::clock_t start_time = std::clock();
+std::clock_t timestamp = std::clock();
+std::clock_t time_ref = std::clock();
+
+
 	//constructor
 CometPlacer::CometPlacer(string kgraph_filepath, string output, int wirepenalty, int timelimit, int width, int height)
 : output(output), wirepenalty(wirepenalty), timelimit(timelimit), width(width), height(height), iteration(0), avg_time(0), annealer(wirepenalty, width, height)
@@ -182,9 +188,11 @@ void CometPlacer::printOutputToFile(string output_filepath)
 
 	cout << "\n****Printing best layout found to file: " << output_filepath << endl;
 
+	vector<Kernel*> best_kernels = annealer.getBestBlocks();
+
 	for(int i = 0; i < kernels.size(); i++)
 	{
-		Kernel* k = kernels[i];
+		Kernel* k = best_kernels[i];
 		output_file << "k" << (i+1) << " = " << k->getType() << "( ";
 	  	vector<int> params = k->getParameters();     
 		for(int i = 0; i < params.size(); i++)
@@ -192,6 +200,23 @@ void CometPlacer::printOutputToFile(string output_filepath)
 		output_file << ")" << endl;
 		output_file << "k" << (i+1) << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
 	}
+
+	//print runtime stats:
+	double total_time_elapsed  = (std::clock() - start_time) / (double) CLOCKS_PER_SEC;
+	int move_count = annealer.getMoveCount();
+
+	cout << "\n\n****RUNTIME STATISTICS****\n\n";
+	cout << "Total runtime: " << total_time_elapsed << endl;
+	cout << "Number of layouts analyzed: " << move_count << endl;
+	double WSE_cost = annealer.WSEcostFunction(); 
+	cout << "**************************" << endl;
+
+	output_file << "\n\n****RUNTIME STATISTICS****\n\n";
+	output_file << "Total runtime: " << total_time_elapsed << endl;
+	output_file << "Number of layouts analyzed: " << move_count << endl;
+	output_file << "WSE competition cost: " << WSE_cost << endl;
+	output_file << "**************************" << endl;
+	
 
 }
 
@@ -231,14 +256,20 @@ void CometPlacer::printTimeAndArea()
 }
 
 
+enum PAUSE
+{
+	PAUSE = true,
+	NO_PAUSE = false
+};
+
 //visualize the kernels on the WSE
-void CometPlacer::updateVisual(bool wait_for_anykey)
+void CometPlacer::updateVisual(bool wait_for_anykey, int epoch_count)
 {
 #ifdef VISUALIZE
 	for(int i = 0; i < kernels.size(); i++)
 		kernels[i]->updateXY();
 
-	updateWSE(window, kernels, iteration);
+	updateWSE(window, kernels, epoch_count);
 	if(!wait_for_anykey) return;
 
 	//wait for any key to be pressed
@@ -447,37 +478,36 @@ void CometPlacer::performAnnealing()
 	annealer.setBlocks(kernels);
 	annealer.initializeOps();
 	annealer.initializeTemp();
-	updateVisual(true);
+	//updateVisual(true);
 
-	for(int i = 0; i < 99; i++)
+	int epoch_count = 0;
+	while(true) //perform annealing steps until exit criteria is met
 	{
-		for(int i = 0; i < 10; i++)
+		cout << "\n\n****BEGIN EPOCH #" << ++epoch_count << endl;
+		for(int i = 0; i < 500; i++)
 		{
-			for(int i = 0; i < 100; i++)
-			{
-				annealer.performAnnealingStep();
-			}
-			annealer.reduceTemp();
-			kernels = annealer.getBlocks();
-			updateVisual(false);
-			if(annealer.getTemp() < 1)
-				break;
+			annealer.performAnnealingStep();
 		}
-		annealer.WSEcostFunction();
-		annealer.printTemp();
-		annealer.printCost();
-		printTimestamp();
-		updateVisual();
+		annealer.reduceTemp();
+		kernels = annealer.getBlocks();
+		if(print) cout << "Kernel count: " << Kernel::getKernelCount() << "\t";
+		if(print) annealer.printMoveCount();
+		if(print) annealer.WSEcostFunction();
+		if(print) annealer.printTemp();
+		if(print) annealer.printCost();
+		if(print) printTimestamp();
+		updateVisual(NO_PAUSE, epoch_count);
 		if(annealer.equilibriumReached() || annealer.getTemp() < 1)
 		{
 			cout << "\n**********\n";
 			cout << "EXIT CRITERIA MET..." << endl;
-			updateVisual(true);
+			updateVisual(PAUSE);
 			annealer.printResults();
-			return;
+			break;
 		}
 	}
-} //performAnnealing
+	cout << "\n****ENDING performAnnealing()****\n";
+} //performAnnealing()
 
 void CometPlacer::computePossibleKernels()
 {
@@ -486,11 +516,6 @@ void CometPlacer::computePossibleKernels()
 		kernels[i]->computePossibleKernels();
 	}
 }
-
-//used to track program execution time
-std::clock_t start_time = std::clock();
-std::clock_t timestamp = std::clock();
-std::clock_t time_ref = std::clock();
 
 void CometPlacer::resetTimestamp()
 {
@@ -504,7 +529,7 @@ void CometPlacer::printTimestamp()
 	double total_time_elapsed  = (std::clock() - start_time) / (double) CLOCKS_PER_SEC;
 	double time_since_previous = (std::clock() - timestamp) / (double) CLOCKS_PER_SEC;
 		
-	printf("TIME ELAPSED: %.02f\t(%.02f since previous)\n", total_time_elapsed, time_since_previous);
+	printf("TIME ELAPSED: %.02fs (%.01fm)\t(%.02fs since previous)\n", total_time_elapsed, total_time_elapsed/60, time_since_previous);
 	
 	timestamp = clock();
 }
@@ -552,11 +577,11 @@ int main(int argc, char** argv)
 	//placer.printKernels();
 
 	placer.enforceMemoryConstraint();
-	placer.updateVisual(true); 
+	//placer.updateVisual(true); 
 	placer.inflateKernelSize(0.8);
-	placer.updateVisual(true); 
-
+	//placer.updateVisual(true); 
 	placer.performAnnealing();
+	//placer.updateVisual(true); 
 	placer.printOutputToFile(output_filepath);
 
 	return 1;

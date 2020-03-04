@@ -10,7 +10,7 @@
 //will be used to create a visualization
 //if SDL is not installed, comment this #define
 //
-#define VISUALIZE
+//#define VISUALIZE
 
 //DEBUG controls print statements
 //
@@ -75,7 +75,7 @@ public:
 	void printTimeAndArea();
 	
 	//visualize the kernels on the WSE
-	void updateVisual(bool wait_for_anykey=false);
+	void updateVisual(bool wait_for_anykey=false, int epoch_count=0);
 
 	void resetTimestamp();
 	void printTimestamp();
