@@ -56,7 +56,7 @@ public:
 		ID = kernel_count++;
 		name = "Kernel " + to_string(ID);
 		type = "Kernel";
-		cout << "Kernel constructor: " << name << " : " << type << endl;
+		//cout << "Kernel constructor: " << name << " : " << type << endl;
 		target_AR = 1;
 
 		for(int i = 0; i < 3; i++)
@@ -66,7 +66,7 @@ public:
 	//destructor
 	~Kernel()
 	{
-		cout << "Kernel DESTRUCTOR: " << name << " : " << type << endl;
+		//cout << "Kernel DESTRUCTOR: " << name << " : " << type << endl;
 		kernel_count--;
 	}
 

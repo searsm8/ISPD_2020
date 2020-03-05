@@ -540,7 +540,7 @@ int main(int argc, char** argv)
 	srand(time(0)); //set random seed
 	
 	string kgraph_filepath; //file to read kgraph input
-	string output_filepath; //file to write output to
+	string output_filepath = "placement.paint"; //file to write output to
 
 	//runtime arguments, and defaults
 	int wirepenalty = 100;
@@ -578,7 +578,7 @@ int main(int argc, char** argv)
 
 	placer.enforceMemoryConstraint();
 	//placer.updateVisual(true); 
-	placer.inflateKernelSize(0.8);
+	placer.inflateKernelSize(0.7);
 	//placer.updateVisual(true); 
 	placer.performAnnealing();
 	//placer.updateVisual(true); 
