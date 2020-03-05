@@ -17,12 +17,12 @@
 //#define DEBUG
 
 #ifdef VISUALIZE
-#include "visual/VisualizeWSE.h"
+#include "VisualizeWSE.h"
 #endif
 
 #include "util.h"
-#include "kernel/Kernels.h"
-#include "Slicing_Annealer/Slicing_Annealer.h"
+#include "Kernels.h"
+#include "Slicing_Annealer.h"
 
 class CometPlacer
 {

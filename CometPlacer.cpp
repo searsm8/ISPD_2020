@@ -539,7 +539,7 @@ int main(int argc, char** argv)
 	cout << "****CometPlacer for WSE****\n\n";
 	srand(time(0)); //set random seed
 	
-	string kgraph_filepath; //file to read kgraph input
+	string kgraph_filepath = "kgraph.txt"; //file to read kgraph input
 	string output_filepath = "placement.paint"; //file to write output to
 
 	//runtime arguments, and defaults
