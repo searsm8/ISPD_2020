@@ -3,7 +3,7 @@
 
 #include <SDL2/SDL.h>
 #include <stdio.h>
-#include "../kernel/Kernels.h"
+#include "Kernels.h"
 #include <vector>
 
 //drawWSE

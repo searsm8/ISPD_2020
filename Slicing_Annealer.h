@@ -34,7 +34,7 @@ private:
 	int wirepenalty;
 
 	vector<int> move_weights; //determines how often each type of move is done
-	double reduction_factor = 0.995; //factor that reduces annealing temperature
+	double reduction_factor = 0.9; //factor that reduces annealing temperature
 	int steps_per_temp = 100; //number of steps before reducing temperature
 	double temp; 	//current annealing temperature
 
@@ -100,7 +100,7 @@ public:
 	void printTemp()
 	{
 		if(!print) return;
-		cout << "Temp: " << temp << endl;
+		cout << "Temp: " << temp << "\treduction_factor: " << reduction_factor << endl;
 	}
 
 	void printCost()
@@ -232,6 +232,19 @@ public:
 
 	void reduceTemp()
 	{
+		//control the temperature schedule
+
+		if(temp < 1000)
+			reduction_factor = .998;
+		else if(temp < 10000)
+			reduction_factor = .995;
+		else if(temp < 50000)
+			reduction_factor = .99;
+		else if(temp < 100000)
+			reduction_factor = .95;
+		else
+			reduction_factor = .9;
+
 		temp *= reduction_factor;
 	}
 	
@@ -630,13 +643,13 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 	double WSEcostFunction()
 	{
 		layout->updateDimensions(); //must set x and y coordinates of each block before estimating wirelen!
-		int wirelen = computeTotalWirelength();;
+		int wirelen = computeTotalWirelength();
 
 		int longest_time = getLongestTime();
 
 		double cost = longest_time + wirelen*wirepenalty;
 
-		cout << "WSE competition cost: " << cost << endl;
+		cout << "WSE competition cost: " << cost << "\twirelength: " << wirelen << "\tTime: " << longest_time << endl;
 		return cost;
 	}
 	

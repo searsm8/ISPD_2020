@@ -578,7 +578,7 @@ int main(int argc, char** argv)
 
 	placer.enforceMemoryConstraint();
 	//placer.updateVisual(true); 
-	placer.inflateKernelSize(0.7);
+	placer.inflateKernelSize(0.9);
 	//placer.updateVisual(true); 
 	placer.performAnnealing();
 	//placer.updateVisual(true); 

@@ -21,6 +21,7 @@ private:
 public:
 	//each Xblock holds Convolutional Kernels
 	vector<Conv> convs;
+//	vector<Conv*> convs;
 	static int xblock_count;
 
 	//constructors
