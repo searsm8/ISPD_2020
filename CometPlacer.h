@@ -52,6 +52,7 @@ public:
 
 
 	//constructor
+	CometPlacer();
 	CometPlacer(string kgraph_filename, string output, int wirepenalty, int timelimit, int width, int height);
 	
 

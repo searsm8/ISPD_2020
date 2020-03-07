@@ -6,6 +6,7 @@
 
 #include "CometPlacer.h"
 
+#include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include <random>
@@ -16,7 +17,10 @@ std::clock_t timestamp = std::clock();
 std::clock_t time_ref = std::clock();
 
 
-	//constructor
+	//constructors
+CometPlacer::CometPlacer()
+{}
+
 CometPlacer::CometPlacer(string kgraph_filepath, string output, int wirepenalty, int timelimit, int width, int height)
 : output(output), wirepenalty(wirepenalty), timelimit(timelimit), width(width), height(height), iteration(0), avg_time(0), annealer(wirepenalty, width, height)
 {
@@ -51,10 +55,13 @@ cout << kernels[i]->getName() << "  AR: " << new_AR << endl;
 
 	setInitialPlacement();
 	computeAvgTime();
+	cout << "avg_time: " <<  avg_time << endl;
+	cout << "kernels: " << kernels.size() << endl;
 }
 
 void CometPlacer::readNode(string line)
 {
+	cout << "readNode() line = " << line << endl;
 	vector<string> elements = split(line, " ");
 	if(elements.size() == 0) return; //blank line!
 
@@ -99,6 +106,7 @@ void CometPlacer::readNode(string line)
 
 void CometPlacer::readConnection(string line)
 {
+	cout << "readConnection() line = " << line << endl;
 	vector<string> elements = split(line, " ");
 	if(elements.size() == 0) return; //blank line!
 
@@ -136,10 +144,11 @@ void CometPlacer::readConnection(string line)
 
 void CometPlacer::readKgraph(string kgraph_filepath)
 {
+	char* c_line;
 	string line;
-	ifstream kgraph_file (kgraph_filepath);
+	FILE* kgraph_file = fopen(kgraph_filepath.c_str(), "r");
 
-	if(!kgraph_file.is_open())
+	if(!kgraph_file)
 	{
 		cout << "****WARNING: could not open kgraph input file \""
 			<< kgraph_filepath<< "\"****\n";
@@ -149,8 +158,14 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 	int mode = 0; //indicates what is being read
 		//0: read nodes 
 		//1: read connectivity list
-	while( getline(kgraph_file, line) )
+	while( true )
 	{
+		if( feof(kgraph_file)) cout << "feof!" << " size: " << kernels.size() << "\n";
+		if( feof(kgraph_file)) break;
+		fscanf(kgraph_file, "%[^\n]\n", c_line);
+
+		line = string(c_line);
+		printf("line read: %s\n", line.c_str());
 		//skip commented lines
 		if(line[0] == '/' && line[1] == '/') continue;
 
@@ -175,6 +190,7 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 				break;
 		}
 	} //end file input
+	fclose(kgraph_file);
 }
 
 //PRINT METHODS
@@ -570,8 +586,12 @@ int main(int argc, char** argv)
 		}
 	}
 
+	cout << "line 581\n";
+
 	CometPlacer placer = CometPlacer(kgraph_filepath, output_filepath, wirepenalty, timelimit, width, height);
 
+	cout << "line 583\n";
+	return 1;
 	placer.updateVisual();
 	//placer.printTimeAndArea();
 	//placer.printKernels();
