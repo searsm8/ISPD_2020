@@ -67,7 +67,7 @@ void CometPlacer::readNode(string line)
 
 	//ignore the input and outputs. No Kernel is created for them
 	if(elements[0].find("input") != -1 || elements[0].find("output") != -1)
-			return;
+		return;
 
 	//for other kernels, create the appropriate object
 
@@ -144,7 +144,7 @@ void CometPlacer::readConnection(string line)
 
 void CometPlacer::readKgraph(string kgraph_filepath)
 {
-	char* c_line;
+	char c_line[1000];
 	string line;
 	FILE* kgraph_file = fopen(kgraph_filepath.c_str(), "r");
 
@@ -160,11 +160,13 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 		//1: read connectivity list
 	while( true )
 	{
-		if( feof(kgraph_file)) cout << "feof!" << " size: " << kernels.size() << "\n";
+		//if( feof(kgraph_file)) cout << "feof!" << " size: " << kernels.size() << "\n";
 		if( feof(kgraph_file)) break;
 		fscanf(kgraph_file, "%[^\n]\n", c_line);
+		printf("c_line: %s\n", c_line);
 
 		line = string(c_line);
+		line = "cblock[1] f=128 h=92 w=92";
 		printf("line read: %s\n", line.c_str());
 		//skip commented lines
 		if(line[0] == '/' && line[1] == '/') continue;
@@ -586,12 +588,9 @@ int main(int argc, char** argv)
 		}
 	}
 
-	cout << "line 581\n";
 
 	CometPlacer placer = CometPlacer(kgraph_filepath, output_filepath, wirepenalty, timelimit, width, height);
 
-	cout << "line 583\n";
-	return 1;
 	placer.updateVisual();
 	//placer.printTimeAndArea();
 	//placer.printKernels();
