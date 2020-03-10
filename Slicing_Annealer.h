@@ -30,8 +30,8 @@ private:
 	vector<string> ops;	 //string of "h" horizontal cut and
 				//"v" vertical cuts
 
-	double max_width, max_height; //maximum size restrictions on the block layout
 	int wirepenalty;
+	double max_width, max_height; //maximum size restrictions on the block layout
 
 	vector<int> move_weights; //determines how often each type of move is done
 	double reduction_factor = 0.9; //factor that reduces annealing temperature
@@ -62,7 +62,7 @@ public:
 	Slicing_Annealer() {}
 
 	Slicing_Annealer(int init_wirepenalty, int init_width, int init_height) 
-	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height), prev_move_num(0), reject_count(0), equilibrium_count(100), move_count(0)
+	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height), move_count(0), prev_move_num(0), reject_count(0), equilibrium_count(100)
 	{
 		move_weights = {70, 20, 10, 0, 0}; //determines how often each type of move is done
 	}
@@ -92,7 +92,7 @@ public:
 	{
 		if(!print) return;
 		cout << "Slicing ops: ";
-		for(int i = 0; i < ops.size(); i++)
+		for(unsigned int i = 0; i < ops.size(); i++)
 			cout << blocks[i]->getName() << " " << ops[i] << " ";
 		cout << endl;
 	}
@@ -131,7 +131,7 @@ public:
 	{
 		ops.push_back(""); //first op must always be empty
 
-		for(int i = 1; i < blocks.size(); i++)
+		for(unsigned int i = 1; i < blocks.size(); i++)
 			ops.push_back("h");
 
 		while(previous_ops_count.size() < ops.size())
@@ -139,7 +139,7 @@ public:
 //cout << "blocks.size() = " << blocks.size() << endl;
 //cout << "ops.size() = " << ops.size() << endl;
 			
-		for(int i = 0; i < blocks.size(); i++)
+		for(unsigned int i = 0; i < blocks.size(); i++)
 		{
 			prev_blocks.push_back(blocks[i]->createCopy());
 			prev_ops.push_back(ops[i]);
@@ -156,7 +156,7 @@ public:
 	//set starting temperature equal to 30*std_dev
 	float initializeTemp()
 	{
-		for(int i = 0; i < blocks.size(); i++)
+		for(unsigned int i = 0; i < blocks.size(); i++)
 			blocks[i]->computePossibleKernels();
 
 		layout = findBestLayout();
@@ -212,7 +212,7 @@ public:
 
 		while(temp > .1)
 		{
-			for(int i = 0; i < steps_per_temp; i++)
+			for(unsigned int i = 0; i < steps_per_temp; i++)
 			{
 				performAnnealingStep();
 			}
@@ -270,17 +270,19 @@ public:
 	int pickMove()
 	{
 		int sum_of_weights = 0;
-		for(int i = 0; i < move_weights.size(); i++)
+		for(unsigned int i = 0; i < move_weights.size(); i++)
 			sum_of_weights += move_weights[i];
 			
 		int pick = rand() % sum_of_weights;
 		
-		for(int i = 0; i < move_weights.size(); i++)
+		for(unsigned int i = 0; i < move_weights.size(); i++)
 		{
 			if(pick < move_weights[i])
 				return i+1;
 			pick -= move_weights[i];
 		}
+
+		return pick;
 	}
 
 	//move M1
@@ -314,13 +316,13 @@ public:
 		cout << "move2()" << endl;
 #endif
 		//choose a random op string until a non-empty one is found
-		int i = rand() % (ops.size()-1);
+		unsigned int i = rand() % (ops.size()-1);
 		while(ops[i].size() == 0)
 			i = rand() % (ops.size()-1);
 	
 		//complement the h's and v's in the string
 		string complement = "";
-		for(int j = 0; j < ops[i].size(); j++)
+		for(unsigned int j = 0; j < ops[i].size(); j++)
 		{
 			if(ops[i][j] == 'h')
 				complement += 'v';
@@ -344,7 +346,7 @@ public:
 		
 		//attempt to swap a cell and operator. If move is not legal, pick another random op string
 		int attempts = 0; 		
-		while(attempts++ < ops.size()) //try this many times, then give up and cancel move
+		while(attempts++ < (signed int)ops.size()) //try this many times, then give up and cancel move
 		{
 			//choose a random op string until a non-empty one is found
 			int i = rand() % (ops.size()-1);
@@ -362,7 +364,7 @@ public:
 				}
 			} 
 			
-			if(i != ops.size() - 1) //can't move the last op forward!
+			if(i != (signed int)(ops.size() - 1)) //can't move the last op forward!
 			{//	printf("moving forward!\n");		
 				if(ops[i][ops[i].size()-1] != ops[i+1][0]) //check if this move would preserve normalization
 				{
@@ -387,7 +389,7 @@ public:
 //		if(true)
 		{
 //			Block* b = getLongestBlock();
-			for(int i = 0; i < blocks.size(); i++)
+			for(unsigned int i = 0; i < blocks.size(); i++)
 			{
 				Block* b = getLongestBlock();
 #ifdef DEBUG
@@ -404,7 +406,7 @@ public:
 		{
 			//decrease size of a random block
 		//	Block* b = blocks[rand()%blocks.size()];
-			for(int i = 0; i < blocks.size(); i++)
+			for(unsigned int i = 0; i < blocks.size(); i++)
 			{
 				Block* b = getShortestBlock();
 				b->decreaseSize();
@@ -440,12 +442,12 @@ public:
 
 	void updatePreviousOpsCount()
 	{
-		for(int i = 1; i < ops.size(); i++)	
+		for(unsigned int i = 1; i < ops.size(); i++)	
 			previous_ops_count[i] = previous_ops_count[i-1] + ops[i].size();
 
 #ifdef DEBUG
 		cout << "ops_count: ";
-		for(int i = 0; i < previous_ops_count.size(); i++)	
+		for(unsigned int i = 0; i < previous_ops_count.size(); i++)	
 			cout << previous_ops_count[i] << " ";
 		cout << endl; 
 #endif
@@ -510,7 +512,7 @@ public:
 		if(new_cost !=  prev_cost)
 			reject_count = 0;
 
-		for(int i = 0; i < blocks.size(); i++)
+		for(unsigned int i = 0; i < blocks.size(); i++)
 		{
 			prev_blocks[i]->copyDataFrom(blocks[i]);
 			prev_ops[i] = string(ops[i]);
@@ -529,7 +531,7 @@ public:
 #endif
 		reject_count++;
 
-		for(int i = 0; i < prev_blocks.size(); i++)
+		for(unsigned int i = 0; i < prev_blocks.size(); i++)
 		{
 			blocks[i]->copyDataFrom(prev_blocks[i]);
 			ops[i] = string(prev_ops[i]);
@@ -551,14 +553,14 @@ public:
 		stack<Block_Wrapper<Block>*> block_stack;
 
 		//combine all blocks based on the ops chain
-		for(int i = 0; i < blocks.size(); i++)
+		for(unsigned int i = 0; i < blocks.size(); i++)
 		{
 			blocks[i]->computePerformance();
 			//put the next cell in a wrapper, then on the stack
 			block_stack.push(new Block_Wrapper<Block>(blocks[i]));
 
 			//resolve all relevant h or v cut operators
-			for(int op_index = 0; op_index < ops[i].size(); op_index++)
+			for(unsigned int op_index = 0; op_index < ops[i].size(); op_index++)
 			{
 				//pop the 2 blocks on top and combine them
 			 	Block_Wrapper<Block>* b1 = block_stack.top();
@@ -577,7 +579,7 @@ public:
 		int prev_area = new_layout->getShapeArea(0);
 		int prev_index = 0;
 
-		for(int i = 1; i < new_layout->getShapes().size(); i++)
+		for(unsigned int i = 1; i < new_layout->getShapes().size(); i++)
 		{
 			int next_area = new_layout->getShapeArea(i); 
 			if(next_area < prev_area)
@@ -618,7 +620,7 @@ public:
 	double costFunction()
 	{
 		//weights
-		double alpha = 3.0;
+		//double alpha = 3.0;
 
 		//compute wire distance cost
 		int wirelen = computeTotalWirelength();;
@@ -660,9 +662,9 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 
 	Block* getLongestBlock()
 	{
-		int longest_time = 0;
-		Block* b;
-		for(int i = 0; i < blocks.size(); i++)
+		Block* b = blocks[0];
+		int longest_time = b->getTime();
+		for(unsigned int i = 1; i < blocks.size(); i++)
 			if(blocks[i]->getTime() > longest_time)
 			{
 				b = blocks[i];
@@ -675,7 +677,7 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 	{
 		Block* b = blocks[0];
 		int shortest_time = b->getTime();
-		for(int i = 0; i < blocks.size(); i++)
+		for(unsigned int i = 1; i < blocks.size(); i++)
 			if(blocks[i]->getTime() < shortest_time)
 			{
 				b = blocks[i];

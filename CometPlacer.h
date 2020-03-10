@@ -5,23 +5,9 @@
 //in the WSE to optimize performance
 #ifndef _CometPlacer
 #define _CometPlacer
-//
-//if VISUALIZE is defined, then the SDL library
-//will be used to create a visualization
-//if SDL is not installed, comment this #define
-//
-//#define VISUALIZE
-
-//DEBUG controls print statements
-//
-//#define DEBUG
-
-#ifdef VISUALIZE
-#include "VisualizeWSE.h"
-#endif
 
 #include "util.h"
-#include "Kernels.h"
+#include "Xblock.h"
 #include "Slicing_Annealer.h"
 
 class CometPlacer

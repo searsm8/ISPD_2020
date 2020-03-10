@@ -40,7 +40,7 @@ public:
 	map<string, int> EP; //Execution parameters
 
 	vector<Kernel*> possible_kernels; //alternative kernels
-	int shape_index;
+	unsigned int shape_index;
 
 	vector<Kernel*> next_kernels; //pointers to the next kernels in the pipeline
 	Kernel* prev_kernel;
@@ -59,7 +59,7 @@ public:
 		//cout << "Kernel constructor: " << name << " : " << type << endl;
 		target_AR = 1;
 
-		for(int i = 0; i < 3; i++)
+		for(unsigned int i = 0; i < 3; i++)
 			colors.push_back(rand()%255);
 	}
 
@@ -213,7 +213,7 @@ public:
 
 		vector<double> target_ARs = {0.1, 0.25, 0.33, 0.5, 0.75,  1}; 
 
-		for( int i = 0; i < target_ARs.size(); i++)
+		for( unsigned int i = 0; i < target_ARs.size(); i++)
 		{
 			changeShapeToAR(target_ARs[i]);
 		
@@ -387,7 +387,7 @@ public:
 	{
 		double dist = 0;
 		pair<double, double> c1 = getCenter();
-		for(int i = 0; i < next_kernels.size(); i++)
+		for(unsigned int i = 0; i < next_kernels.size(); i++)
 		{
 			pair<double, double> c2 = next_kernels[i]->getCenter();
 			dist += abs(c1.first - c2.first) + abs(c1.second - c2.second); 

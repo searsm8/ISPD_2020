@@ -3,7 +3,7 @@
 
 #include <SDL2/SDL.h>
 #include <stdio.h>
-#include "Kernels.h"
+#include "Kernel.h"
 #include <vector>
 
 //drawWSE
@@ -25,6 +25,9 @@ SDL_Window* createWSE(int WSE_width=633, int WSE_height=633)
     // Setup renderer
     SDL_Renderer* renderer = NULL;
     renderer =  SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED);
+
+    if(renderer == NULL)
+	    cout << "WARNING: renderer = NULL\n";
 
     // Set render color to red ( background will be rendered in this color )
 //    SDL_SetRenderDrawColor( renderer, 255, 0, 0, 255 );
@@ -74,7 +77,7 @@ void drawRect(SDL_Renderer* renderer, vector<int> rect, vector<int> colors)
 //draw a line representing the connection between two kernels
 void drawConnection(SDL_Renderer* renderer, Kernel* k)
 {
-	for(int i = 0; i < k->getNextKernels().size(); i++)
+	for(unsigned int i = 0; i < k->getNextKernels().size(); i++)
 	{
 		Kernel* next = k->getNextKernels()[i];
 		if(next == NULL) break;

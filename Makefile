@@ -1,5 +1,5 @@
 all:
-	g++ CometPlacer.cpp $(shell pkg-config --cflags --libs sdl2) -std=c++11 -o CometPlacer.out
+	g++ -Wall -g CometPlacer.cpp $(shell pkg-config --cflags --libs sdl2) -std=c++11 -o CometPlacer.out
 
 clean:
 	rm CometPlacer.out

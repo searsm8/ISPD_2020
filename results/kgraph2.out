@@ -1,40 +1,40 @@
-k1 = cblock( 14 14 2048 4 5 5 5 5 5 25 11 22 11 )
+k1 = cblock( 14 14 2048 4 5 4 4 4 11 24 11 )
 k1 : place(0 0 R0)
-k2 = cblock( 28 28 1024 4 5 4 4 4 9 22 10 )
+k2 = cblock( 28 28 1024 4 5 5 5 5 5 21 13 23 11 )
 k2 : place(158 0 R0)
-k3 = cblock( 56 56 512 4 5 4 4 4 11 22 11 )
+k3 = cblock( 56 56 512 4 5 4 4 4 11 24 11 )
 k3 : place(316 0 R0)
-k4 = cblock( 56 56 256 4 4 4 4 4 18 39 19 )
+k4 = cblock( 56 56 256 4 4 4 4 4 9 23 9 )
 k4 : place(474 0 R0)
-k5 = dblock( 7 7 2048 4 4 4 4 4 18 39 19 )
+k5 = dblock( 7 7 2048 4 4 4 4 4 9 23 9 )
 k5 : place(474 158 R0)
-k6 = dblock( 7 7 2048 4 4 3 3 3 32 64 27 )
+k6 = dblock( 7 7 2048 4 4 4 4 4 9 22 10 )
 k6 : place(316 158 R0)
-k7 = dblock( 14 14 1024 4 4 3 3 3 32 64 27 )
+k7 = dblock( 14 14 1024 4 4 4 4 4 9 23 9 )
 k7 : place(158 158 R0)
-k8 = dblock( 14 14 1024 4 4 4 4 4 4 43 23 44 21 )
+k8 = dblock( 14 14 1024 4 4 4 4 4 9 23 9 )
 k8 : place(0 158 R0)
-k9 = dblock( 14 14 1024 4 4 4 4 4 19 43 19 )
+k9 = dblock( 14 14 1024 4 4 4 4 4 4 11 6 11 5 )
 k9 : place(0 316 R0)
-k10 = dblock( 14 14 1024 4 4 4 4 4 19 43 19 )
+k10 = dblock( 14 14 1024 4 4 5 5 5 5 22 13 23 11 )
 k10 : place(158 316 R0)
-k11 = dblock( 14 14 1024 4 4 4 4 4 21 32 26 )
+k11 = dblock( 14 14 1024 4 4 4 4 4 9 23 9 )
 k11 : place(316 316 R0)
-k12 = dblock( 28 28 512 4 4 4 4 4 4 13 9 16 8 )
+k12 = dblock( 28 28 512 4 4 4 4 4 9 22 10 )
 k12 : place(474 316 R0)
-k13 = dblock( 28 28 512 4 4 4 4 4 26 64 25 )
+k13 = dblock( 28 28 512 4 4 4 4 4 9 22 10 )
 k13 : place(474 474 R0)
-k14 = dblock( 28 28 512 4 4 4 4 4 4 39 24 41 21 )
+k14 = dblock( 28 28 512 4 4 4 4 4 9 22 10 )
 k14 : place(316 474 R0)
-k15 = dblock( 56 56 256 4 4 4 4 4 19 36 19 )
+k15 = dblock( 56 56 256 4 4 5 5 5 5 25 11 22 11 )
 k15 : place(158 474 R0)
-k16 = dblock( 56 56 256 4 4 4 4 4 19 36 19 )
+k16 = dblock( 56 56 256 4 4 4 4 4 9 22 10 )
 k16 : place(0 474 R0)
 
 
 ****RUNTIME STATISTICS****
 
-Total runtime: 554.615
-Number of layouts analyzed: 222200
-WSE competition cost: 353628
+Total runtime: 225.831
+Number of layouts analyzed: 110700
+WSE competition cost: 327328
 **************************

@@ -3,6 +3,19 @@
 //
 //Primary driver for Wafer Space Enginer placer
 //
+//if VISUALIZE is defined, then the SDL library
+//will be used to create a visualization
+//if SDL is not installed, comment this #define
+//
+#define VISUALIZE
+
+//DEBUG controls print statements
+//
+//#define DEBUG
+
+#ifdef VISUALIZE
+#include "VisualizeWSE.h"
+#endif
 
 #include "CometPlacer.h"
 
@@ -22,8 +35,9 @@ CometPlacer::CometPlacer()
 {}
 
 CometPlacer::CometPlacer(string kgraph_filepath, string output, int wirepenalty, int timelimit, int width, int height)
-: output(output), wirepenalty(wirepenalty), timelimit(timelimit), width(width), height(height), iteration(0), avg_time(0), annealer(wirepenalty, width, height)
+: wirepenalty(wirepenalty), timelimit(timelimit), width(width), height(height), iteration(0), avg_time(0), output(output), annealer(wirepenalty, width, height)
 {
+
 	//read the input file and populate the kernels
 	readKgraph(kgraph_filepath);	
 #ifdef VISUALIZE
@@ -36,7 +50,7 @@ CometPlacer::CometPlacer(string kgraph_filepath, string output, int wirepenalty,
 	double mean = 1.5, std_dev = .3;
 	normal_distribution<double> d{mean, std_dev};
 
-	for(int i = 0; i < kernels.size(); i++)
+	for(unsigned int i = 0; i < kernels.size(); i++)
 	{
 		double new_AR = d(gen);
 
@@ -55,27 +69,21 @@ cout << kernels[i]->getName() << "  AR: " << new_AR << endl;
 
 	setInitialPlacement();
 	computeAvgTime();
-	cout << "avg_time: " <<  avg_time << endl;
-	cout << "kernels: " << kernels.size() << endl;
 }
 
 void CometPlacer::readNode(string line)
 {
-	cout << "readNode() line = " << line << endl;
 	vector<string> elements = split(line, " ");
 	if(elements.size() == 0) return; //blank line!
 
 	//ignore the input and outputs. No Kernel is created for them
-	if(elements[0].find("input") != -1 || elements[0].find("output") != -1)
+	if((signed int)elements[0].find("input") != -1 || (signed int)elements[0].find("output") != -1)
 		return;
 
 	//for other kernels, create the appropriate object
-
 		int F=0, H=0, W=0;
-		int R=0, S=0, C=0, K=0, T=0; 
-
 		//read in all the Formal Parameters
-		for(int i = 1; i < elements.size(); i++)
+		for(unsigned int i = 1; i < elements.size(); i++)
 		{
 			vector<string> next_FP = split(elements[i], "=");
 
@@ -87,14 +95,14 @@ void CometPlacer::readNode(string line)
 				W = stoi(next_FP[1]);
 		}
 
-	int i = 1;
+	//unsigned int i = 1;
 	Kernel* new_kernel;
-	if(elements[0].find("dblock") != -1)
+	if((signed int)elements[0].find("dblock") != -1)
 	{
 		new_kernel = new Xblock(H, W, F, "dblock");
 		//new_kernel = new Dblock(H, W, F, i,i,i,i,i,i,i,i);
 	}
-	else if(elements[0].find("cblock") != -1)
+	else if((signed int)elements[0].find("cblock") != -1)
 	{
 		new_kernel = new Xblock(H, W, F, "cblock");
 	}
@@ -106,7 +114,6 @@ void CometPlacer::readNode(string line)
 
 void CometPlacer::readConnection(string line)
 {
-	cout << "readConnection() line = " << line << endl;
 	vector<string> elements = split(line, " ");
 	if(elements.size() == 0) return; //blank line!
 
@@ -116,13 +123,13 @@ void CometPlacer::readConnection(string line)
 	//ignore the shape in elements[3], for now
 	//
 	//ignore the input and outputs. No Connection is created for them
-	if(name2.find("output") != -1)
+	if((signed int)name2.find("output") != -1)
 		return;
 
 	//find the kernels with the names indicated
-	Kernel* k1; 
-	Kernel* k2; 
-	for(int i = 0; i < kernels.size(); i++)
+	Kernel* k1 = kernels[0]; 
+	Kernel* k2 = kernels[0]; 
+	for(unsigned int i = 1; i < kernels.size(); i++)
 	{
 		if(kernels[i]->getName() == name1)
 			k1 = kernels[i];
@@ -130,7 +137,7 @@ void CometPlacer::readConnection(string line)
 			k2 = kernels[i];
 	}
 
-	if(name1.find("input") != -1)
+	if((signed int)name1.find("input") != -1)
 	{
 		//set the head to the input	
 		head = k2;
@@ -163,20 +170,18 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 		//if( feof(kgraph_file)) cout << "feof!" << " size: " << kernels.size() << "\n";
 		if( feof(kgraph_file)) break;
 		fscanf(kgraph_file, "%[^\n]\n", c_line);
-		printf("c_line: %s\n", c_line);
 
 		line = string(c_line);
-		line = "cblock[1] f=128 h=92 w=92";
-		printf("line read: %s\n", line.c_str());
+		//line = "cblock[1] f=128 h=92 w=92";
 		//skip commented lines
 		if(line[0] == '/' && line[1] == '/') continue;
 
-		if(line.find("Node Definitions") != -1)
+		if((signed int)line.find("Node Definitions") != -1)
 		{
 			mode = 0;
 			continue;
 		}
-		if(line.find("Connectivity") != -1)
+		if((signed int)line.find("Connectivity") != -1)
 		{
 			mode = 1;
 			continue;
@@ -208,12 +213,12 @@ void CometPlacer::printOutputToFile(string output_filepath)
 
 	vector<Kernel*> best_kernels = annealer.getBestBlocks();
 
-	for(int i = 0; i < kernels.size(); i++)
+	for(unsigned int i = 0; i < kernels.size(); i++)
 	{
 		Kernel* k = best_kernels[i];
 		output_file << "k" << (i+1) << " = " << k->getType() << "( ";
 	  	vector<int> params = k->getParameters();     
-		for(int i = 0; i < params.size(); i++)
+		for(unsigned int i = 0; i < params.size(); i++)
 			output_file << params[i] << " ";
 		output_file << ")" << endl;
 		output_file << "k" << (i+1) << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
@@ -284,7 +289,7 @@ enum PAUSE
 void CometPlacer::updateVisual(bool wait_for_anykey, int epoch_count)
 {
 #ifdef VISUALIZE
-	for(int i = 0; i < kernels.size(); i++)
+	for(unsigned int i = 0; i < kernels.size(); i++)
 		kernels[i]->updateXY();
 
 	updateWSE(window, kernels, epoch_count);
@@ -342,7 +347,7 @@ int CometPlacer::computeTotalKernelArea()
 //place all the kernels spread evenly across the wafer in a grid
 void CometPlacer::setInitialPlacement()
 {
-	int index = 0;
+	unsigned int index = 0;
 
 	int grid_size = ceil(sqrt(kernels.size()));
 	int spacing = ceil(width/grid_size);
@@ -396,7 +401,7 @@ Kernel* CometPlacer::getLongestKernel()
 	Kernel* k = kernels[0];
 	int longest_time = k->getTime();
 
-	for(int i = 1; i < kernels.size(); i++)
+	for(unsigned int i = 1; i < kernels.size(); i++)
 	{
 		if(kernels[i]->getTime() > longest_time)
 		{
@@ -413,7 +418,7 @@ void CometPlacer::increaseAllEP(string key, int increment)
 #ifdef DEBUG
 cout << "\nincreaseAllEP("<< key << ", " << increment << ")\n";
 #endif
-	for(int i = 0; i < kernels.size(); i++)
+	for(unsigned int i = 0; i < kernels.size(); i++)
 		kernels[i]->increaseEP(key, increment);
 }
 
@@ -449,7 +454,7 @@ void CometPlacer::inflateKernelSize(double fill_percent_p1)
 	//the target time for each kernel to be the longest kernel time 
 	int longest_time = getLongestTime();
 
-	for(int i = 0; i < kernels.size(); i++)
+	for(unsigned int i = 0; i < kernels.size(); i++)
 		kernels[i]->setTargetTime(longest_time);
 cout << "filled_percent: " << filled_percent  << endl << endl;
 }//end inflateKernelSize()
@@ -461,7 +466,7 @@ cout << "filled_percent: " << filled_percent  << endl << endl;
 bool CometPlacer::enforceMemoryConstraint()
 {
 	Kernel* k;
-	for(int i = 0; i < kernels.size(); i++)
+	for(unsigned int i = 0; i < kernels.size(); i++)
 	{
 		k = kernels[i];
 		//memory constraint check here!
@@ -480,7 +485,7 @@ bool CometPlacer::enforceMemoryConstraint()
 
 void CometPlacer::decreaseBlocks()
 {
-	for(int i = 0; i < kernels.size(); i++)
+	for(unsigned int i = 0; i < kernels.size(); i++)
 	{
 		Kernel* k = kernels[i];
 		k->decreaseSize(); //decrease size
@@ -502,7 +507,7 @@ void CometPlacer::performAnnealing()
 	while(true) //perform annealing steps until exit criteria is met
 	{
 		cout << "\n\n****BEGIN EPOCH #" << ++epoch_count << endl;
-		for(int i = 0; i < 500; i++)
+		for(unsigned int i = 0; i < 500; i++)
 		{
 			annealer.performAnnealingStep();
 		}
@@ -529,7 +534,7 @@ void CometPlacer::performAnnealing()
 
 void CometPlacer::computePossibleKernels()
 {
-	for(int i = 0; i < kernels.size(); i++)
+	for(unsigned int i = 0; i < kernels.size(); i++)
 	{
 		kernels[i]->computePossibleKernels();
 	}

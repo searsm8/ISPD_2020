@@ -1,18 +1,26 @@
-k1 = dblock( 56 56 256 6 6 4 4 4 32 64 29 )
-k1 : place(0 522 R0)
-k2 = dblock( 56 56 128 4 5 3 3 3 16 32 15 )
-k2 : place(0 486 R0)
-k3 = dblock( 56 56 256 6 6 4 4 4 32 64 29 )
-k3 : place(0 406 R0)
-k4 = dblock( 56 56 256 6 6 4 4 4 32 64 29 )
-k4 : place(297 0 R90)
-k5 = cblock( 56 56 128 4 5 3 3 3 3 32 16 22 11 )
-k5 : place(261 0 R90)
-k6 = cblock( 92 92 128 5 5 4 4 4 4 32 32 32 16 )
-k6 : place(216 0 R90)
-k7 = dblock( 28 28 256 4 5 3 3 3 16 32 16 )
-k7 : place(0 342 R0)
-k8 = dblock( 56 56 128 4 5 3 3 3 16 32 15 )
-k8 : place(180 0 R90)
-k9 = dblock( 56 56 256 6 6 5 5 5 21 64 29 )
-k9 : place(0 0 R90)
+k1 = cblock( 92 92 128 4 4 5 5 5 21 32 18 )
+k1 : place(0 0 R0)
+k2 = cblock( 56 56 128 3 4 4 4 4 4 10 4 9 4 )
+k2 : place(211 0 R0)
+k3 = dblock( 28 28 256 4 4 4 4 4 9 16 8 )
+k3 : place(422 0 R0)
+k4 = dblock( 56 56 256 4 5 5 5 5 21 32 18 )
+k4 : place(422 211 R0)
+k5 = dblock( 56 56 128 3 4 5 5 5 5 16 10 18 8 )
+k5 : place(211 211 R0)
+k6 = dblock( 56 56 256 4 5 5 5 5 21 32 18 )
+k6 : place(0 211 R0)
+k7 = dblock( 56 56 128 3 4 4 4 4 8 16 9 )
+k7 : place(0 422 R0)
+k8 = dblock( 56 56 256 4 5 4 4 4 8 16 9 )
+k8 : place(211 422 R0)
+k9 = dblock( 56 56 256 4 5 5 5 5 21 32 18 )
+k9 : place(422 422 R0)
+
+
+****RUNTIME STATISTICS****
+
+Total runtime: 159.418
+Number of layouts analyzed: 146800
+WSE competition cost: 177992
+**************************

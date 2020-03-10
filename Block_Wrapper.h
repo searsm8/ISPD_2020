@@ -25,7 +25,6 @@ class Block_Wrapper
 {
 private:
 	bool base_level;
-	char cut; //'h' for horizontal cut, or 'v' for vertical cut
 
        	//if the Wrapper is base level, then it contains a single Block
 	Block* base_block;
@@ -33,6 +32,7 @@ private:
 	//otherwise, it will contain two other Wrappers
 	Block_Wrapper* w1;
 	Block_Wrapper* w2;
+	char cut; //'h' for horizontal cut, or 'v' for vertical cut
 
 	vector < pair<int, int> > shapes; //pair<width, height>
 		//set of possible shapes that are within A.R. limits
@@ -117,7 +117,7 @@ vector < pair<int, int> > getShapes() { return shapes; }
 		vector<Block*> possible_blocks = base_block->getPossibleKernels();
 
 		shapes.clear();
-		for(int i = 0; i < possible_blocks.size(); i++)
+		for(unsigned int i = 0; i < possible_blocks.size(); i++)
 			shapes.push_back(pair<int, int>(possible_blocks[i]->getWidth(), possible_blocks[i]->getHeight()));
 
 			//add shapes to the base block for 90 degree rotations!
@@ -198,7 +198,7 @@ vector < pair<int, int> > getShapes() { return shapes; }
 
 		if(cut == 'h')
 		{
-			while(index_1 < w1->shapes.size() && index_2 < w2->shapes.size())
+			while(index_1 < (signed int)w1->shapes.size() && index_2 < (signed int)w2->shapes.size())
 			{
 				//for horizontal cut, add heights together.
 				new_shape.second = w1->shapes[index_1].second + w2->shapes[index_2].second;
@@ -277,14 +277,14 @@ vector < pair<int, int> > getShapes() { return shapes; }
 		//find the shapes which correspond to this larger block's shape
 		if(cut == 'h')
 		{
-			for(int i = 0; i < w1->shapes.size(); i++)
+			for(unsigned int i = 0; i < w1->shapes.size(); i++)
 				if(w1->shapes[i].first <= getWidth())
 				{
 					w1->solidifyShape(i);
 					break;
 				}
 
-			for(int i = 0; i < w2->shapes.size(); i++)
+			for(unsigned int i = 0; i < w2->shapes.size(); i++)
 				if(w2->shapes[i].first <= getWidth())
 				{
 					w2->solidifyShape(i);
@@ -317,7 +317,7 @@ vector < pair<int, int> > getShapes() { return shapes; }
 		if(base_level)
 			cout << "(Base Block: " << base_block->getName() << ")\n";
 		else cout << "(" << cut << " cut)\n";
-		for(int i = 0; i < shapes.size(); i++)
+		for(unsigned int i = 0; i < shapes.size(); i++)
 		{
 			cout << "(" << shapes[i].first << ", " << shapes[i].second << ")\n";
 		}
