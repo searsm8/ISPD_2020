@@ -64,11 +64,13 @@ public:
 	}
 
 	//destructor
+	/*
 	~Kernel()
 	{
 		//cout << "Kernel DESTRUCTOR: " << name << " : " << type << endl;
 		kernel_count--;
 	}
+	*/
 
 	virtual void printParameters()
 	{
@@ -211,7 +213,8 @@ public:
 	{
 //cout << "computePossibleKernels()\n";
 
-		vector<double> target_ARs = {0.1, 0.25, 0.33, 0.5, 0.75,  1}; 
+	//	vector<double> target_ARs = {0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.2, 1.5, 2,  1}; 
+		vector<double> target_ARs = {0.1, 0.25, 0.33, 0.5, 0.75, 1}; 
 
 		for( unsigned int i = 0; i < target_ARs.size(); i++)
 		{

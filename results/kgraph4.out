@@ -1,8 +1,16 @@
-k1 = cblock( 28 28 256 4 4 3 3 3 3 32 13 24 12 )
-k1 : place(189 80 R0)
-k2 = dblock( 56 56 128 4 5 3 3 3 16 32 15 )
-k2 : place(0 80 R0)
-k3 = dblock( 56 56 256 6 6 4 4 4 32 64 29 )
-k3 : place(174 0 R0)
-k4 = dblock( 56 56 128 4 5 3 3 3 11 32 15 )
+k1 = dblock( 56 56 128 3 4 3 3 3 3 32 16 29 14 )
+k1 : place(0 0 R0)
+k2 = dblock( 56 56 128 1 1 2 2 2 16 32 15 )
+k2 : place(0 0 R0)
+k3 = cblock( 28 28 256 1 1 3 3 3 32 64 29 )
+k3 : place(0 0 R0)
+k4 = dblock( 56 56 256 1 1 3 3 3 16 32 15 )
 k4 : place(0 0 R0)
+
+
+****RUNTIME STATISTICS****
+
+Total runtime: 49.091s
+Number of layouts analyzed: 92800
+WSE competition cost: 89868
+**************************

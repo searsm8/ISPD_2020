@@ -7,11 +7,16 @@
 //will be used to create a visualization
 //if SDL is not installed, comment this #define
 //
-#define VISUALIZE
+//#define VISUALIZE
 
 //DEBUG controls print statements
 //
 //#define DEBUG
+
+//READ_FILE controls where input comes from
+//if not defined, read from stdin
+//otherwise, read from a specified file
+//#define READ_FILE
 
 #ifdef VISUALIZE
 #include "VisualizeWSE.h"
@@ -19,10 +24,11 @@
 
 #include "CometPlacer.h"
 
-#include <stdio.h>
-#include <iostream>
-#include <fstream>
-#include <random>
+#include <cstdio>
+
+//uncomment to disable assert()
+//#define NDEBUG
+#include <cassert>
 
 //used to track program execution time
 std::clock_t start_time = std::clock();
@@ -59,7 +65,7 @@ CometPlacer::CometPlacer(string kgraph_filepath, string output, int wirepenalty,
 		if(rand()%2 == 0)
 			new_AR = 1 / new_AR;
 
-		new_AR=.25;
+		new_AR=.25; //force initial ARs
 
 		kernels[i]->setAR(new_AR);
 #ifdef DEBUG
@@ -67,12 +73,14 @@ cout << kernels[i]->getName() << "  AR: " << new_AR << endl;
 #endif
 	}
 
+	assert(kernels.size() != 0);
 	setInitialPlacement();
 	computeAvgTime();
 }
 
 void CometPlacer::readNode(string line)
 {
+	//cout << "readNode()\nline: " << line << endl;
 	vector<string> elements = split(line, " ");
 	if(elements.size() == 0) return; //blank line!
 
@@ -114,6 +122,7 @@ void CometPlacer::readNode(string line)
 
 void CometPlacer::readConnection(string line)
 {
+	//cout << "readConnection()\nline: " << line << endl;
 	vector<string> elements = split(line, " ");
 	if(elements.size() == 0) return; //blank line!
 
@@ -152,26 +161,33 @@ void CometPlacer::readConnection(string line)
 void CometPlacer::readKgraph(string kgraph_filepath)
 {
 	char c_line[1000];
-	string line;
+	string line, prev_line;
+#ifdef READ_FILE
 	FILE* kgraph_file = fopen(kgraph_filepath.c_str(), "r");
-
 	if(!kgraph_file)
 	{
 		cout << "****WARNING: could not open kgraph input file \""
 			<< kgraph_filepath<< "\"****\n";
 		return;
 	}
-
+#endif
 	int mode = 0; //indicates what is being read
 		//0: read nodes 
 		//1: read connectivity list
 	while( true )
 	{
 		//if( feof(kgraph_file)) cout << "feof!" << " size: " << kernels.size() << "\n";
+#ifdef READ_FILE
 		if( feof(kgraph_file)) break;
 		fscanf(kgraph_file, "%[^\n]\n", c_line);
+#else
+		scanf("%[^\n]\n", c_line);
+#endif
 
 		line = string(c_line);
+		if(line == prev_line)
+			break;
+		prev_line = line;
 		//line = "cblock[1] f=128 h=92 w=92";
 		//skip commented lines
 		if(line[0] == '/' && line[1] == '/') continue;
@@ -197,7 +213,9 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 				break;
 		}
 	} //end file input
+#ifdef READ_FILE
 	fclose(kgraph_file);
+#endif
 }
 
 //PRINT METHODS
@@ -229,13 +247,13 @@ void CometPlacer::printOutputToFile(string output_filepath)
 	int move_count = annealer.getMoveCount();
 
 	cout << "\n\n****RUNTIME STATISTICS****\n\n";
-	cout << "Total runtime: " << total_time_elapsed << endl;
+	printTimestamp();
 	cout << "Number of layouts analyzed: " << move_count << endl;
 	double WSE_cost = annealer.WSEcostFunction(); 
 	cout << "**************************" << endl;
 
 	output_file << "\n\n****RUNTIME STATISTICS****\n\n";
-	output_file << "Total runtime: " << total_time_elapsed << endl;
+	output_file << "Total runtime: " << total_time_elapsed << "s" << endl;
 	output_file << "Number of layouts analyzed: " << move_count << endl;
 	output_file << "WSE competition cost: " << WSE_cost << endl;
 	output_file << "**************************" << endl;
@@ -350,6 +368,7 @@ void CometPlacer::setInitialPlacement()
 	unsigned int index = 0;
 
 	int grid_size = ceil(sqrt(kernels.size()));
+	assert(grid_size > 0);
 	int spacing = ceil(width/grid_size);
 	int next_X, next_Y;
 
@@ -602,7 +621,7 @@ int main(int argc, char** argv)
 
 	placer.enforceMemoryConstraint();
 	//placer.updateVisual(true); 
-	placer.inflateKernelSize(0.9);
+	placer.inflateKernelSize(0.8);
 	//placer.updateVisual(true); 
 	placer.performAnnealing();
 	//placer.updateVisual(true); 

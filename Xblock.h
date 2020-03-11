@@ -20,8 +20,8 @@ class Xblock : public Kernel
 private:
 public:
 	//each Xblock holds Convolutional Kernels
-//	vector<Conv> convs;
-	vector<Conv*> convs;
+	vector<Conv> convs;
+//	vector<Conv*> convs;
 	static int xblock_count;
 
 	//constructors
@@ -34,20 +34,19 @@ public:
 
 		if(type == "dblock")
 		{
-			Conv* c1 = new Conv(H, W, 1, 1, F,   F/4, 1, i, i, i, i);
-			convs.push_back(c1);
-			Conv* c2 = new Conv(H, W, 3, 3, F/4, F/4, 1, i, i, i, i);
-			convs.push_back(c2);
-			Conv* c3 = new Conv(H, W, 1, 1, F/4, F,   1, i, i, i, i);
-			convs.push_back(c3);
+			convs.reserve(3);
+			convs.push_back(Conv(H, W, 1, 1, F,   F/4, 1, i, i, i, i));
+			convs.push_back(Conv(H, W, 3, 3, F/4, F/4, 1, i, i, i, i));
+			convs.push_back(Conv(H, W, 1, 1, F/4, F,   1, i, i, i, i));
 		}
 
 		if(type == "cblock")
 		{
-			convs.push_back(new Conv(H, W, 1, 1, F,   F/4, 1, i, i, i, i));
-			convs.push_back(new Conv(H, W, 3, 3, F/4, F/4, 2, i, i, i, i));
-			convs.push_back(new Conv(H, W, 1, 1, F/4, F,   1, i, i, i, i));
-			convs.push_back(new Conv(H, W, 1, 1, F/2, F,   2, i, i, i, i));
+			convs.reserve(4);
+			convs.push_back(Conv(H, W, 1, 1, F,   F/4, 1, i, i, i, i));
+			convs.push_back(Conv(H, W, 3, 3, F/4, F/4, 2, i, i, i, i));
+			convs.push_back(Conv(H, W, 1, 1, F/4, F,   1, i, i, i, i));
+			convs.push_back(Conv(H, W, 1, 1, F/2, F,   2, i, i, i, i));
 		}
 		
 		//initialize formal parameters
@@ -68,7 +67,7 @@ public:
 
 		xblock_count++;
 	}
-	
+/*	
 	//take in a new Execution Parameter
 	bool setEP(string key, int val)
 	{
@@ -79,24 +78,24 @@ public:
 			{
 				case 'h':
 					for(unsigned int i = 0; i < convs.size(); i++)
-						convs[i]->setEP(key, val);
+						convs[i].setEP(key, val);
 					break;
 
 				case 'w':
 					for(unsigned int i = 0; i < convs.size(); i++)
-						convs[i]->setEP(key, val);
+						convs[i].setEP(key, val);
 					break;
 				
 				case 'c':
-					convs[0]->setEP("c", val);
-					convs[1]->setEP("c", floor((9/4)*val));
-					convs[2]->setEP("c", val);
+					convs[0].setEP("c", val);
+					convs[1].setEP("c", floor((9/4)*val));
+					convs[2].setEP("c", val);
 					break;
 	
 				case 'k':
-					convs[0]->setEP("k", val);
-					convs[1]->setEP("k", val);
-					convs[2]->setEP("k", val);
+					convs[0].setEP("k", val);
+					convs[1].setEP("k", val);
+					convs[2].setEP("k", val);
 					break;
 			}
 		}
@@ -104,12 +103,13 @@ public:
 		{
 			string new_key = key.substr(0, 1);
 			int index = stoi(key.substr(1))-1;
-			convs[index]->setEP(new_key, val);
+			convs[index].setEP(new_key, val);
 		}
 		EP[key] = val;
 		computePerformance();
 		return true;
 	} 
+	*/
 
 	int computeHeight()
 	{
@@ -117,7 +117,7 @@ public:
 		int next;
 		for(unsigned int i = 0; i < convs.size(); i++)
 		{
-			next = convs[i]->computeHeight();
+			next = convs[i].computeHeight();
 			if(next > max)
 				max = next;
 		}
@@ -130,7 +130,7 @@ public:
 	{
 		int total_width = 0;
 		for(unsigned int i = 0; i < convs.size(); i++)
-			total_width += convs[i]->computeWidth();
+			total_width += convs[i].computeWidth();
 		width = total_width;
 	//	updateX();
 	       return total_width;	
@@ -142,7 +142,7 @@ public:
 		int next;
 		for(unsigned int i = 0; i < convs.size(); i++)
 		{
-			next = convs[i]->computeTime();
+			next = convs[i].computeTime();
 			if(next > max)
 				max = next;
 		}
@@ -156,7 +156,7 @@ public:
 		int next;
 		for(unsigned int i = 0; i < convs.size(); i++)
 		{
-			next = convs[i]->computeMemory();
+			next = convs[i].computeMemory();
 			if(next > max)
 				max = next;
 		}
@@ -178,7 +178,7 @@ public:
 //cout << "Xblock setRotation("<< new_rot << ")\n";
 		Kernel::setRotation(new_rot);
 		for(unsigned int i = 0; i < convs.size(); i++)
-			convs[i]->setRotation(new_rot);
+			convs[i].setRotation(new_rot);
 
 		updateXY();
 	}
@@ -202,17 +202,17 @@ public:
 		int new_X = x;
 		if(rotation == 0)
 		{
-			convs[0]->x = new_X;
+			convs[0].x = new_X;
 			for(unsigned int i = 0; i < convs.size()-1; i++)
 			{	
-				new_X += convs[i]->width;
-				convs[i+1]->x = new_X;
+				new_X += convs[i].width;
+				convs[i+1].x = new_X;
 			}
 		}
 		else
 		{
 			for(unsigned int i = 0; i < convs.size(); i++)
-				convs[i]->x = new_X;
+				convs[i].x = new_X;
 		}
 	}
 
@@ -222,15 +222,15 @@ public:
 		if(rotation == 0)
 		{
 			for(unsigned int i = 0; i < convs.size(); i++)
-				convs[i]->y = new_Y;
+				convs[i].y = new_Y;
 		}
 		else
 		{
-			convs[0]->y = new_Y;
+			convs[0].y = new_Y;
 			for(unsigned int i = 0; i < convs.size()-1; i++)
 			{
-				new_Y += convs[i]->width;
-				convs[i+1]->y = new_Y;
+				new_Y += convs[i].width;
+				convs[i+1].y = new_Y;
 			}
 		}
 	}
@@ -250,12 +250,12 @@ public:
 		if(rotation == 0)
 		{
 			for(unsigned int i = 0; i < convs.size(); i++)
-				rects.push_back(vector<int>{ convs[i]->x, convs[i]->y, convs[i]->width, convs[i]->height});
+				rects.push_back(vector<int>{ convs[i].x, convs[i].y, convs[i].width, convs[i].height});
 		}
 		else
 		{
 			for(unsigned int i = 0; i < convs.size(); i++)
-				rects.push_back(vector<int>{ convs[i]->x, convs[i]->y, convs[i]->height, convs[i]->width});
+				rects.push_back(vector<int>{ convs[i].x, convs[i].y, convs[i].height, convs[i].width});
 		}
 		return rects;
 	}
@@ -265,7 +265,7 @@ public:
 	void equalizeTime()
 	{
 		//increase the c2 parameter until conv blocks are equal time
-		while(convs[1]->time > convs[0]->time)
+		while(convs[1].time > convs[0].time)
 			increaseEP("c2", 1);
 	}
 
@@ -276,14 +276,14 @@ public:
 	{
 		Kernel::printPerformance();
 		for(unsigned int i = 0; i < convs.size(); i++)
-			convs[i]->printPerformance();
+			convs[i].printPerformance();
 	}
 	
 	void printParameters()
 	{
 		Kernel::printParameters();
 		for(unsigned int i = 0; i < convs.size(); i++)
-			convs[i]->printParameters();
+			convs[i].printParameters();
 	}
 
 	vector<int> getParameters()
@@ -298,9 +298,9 @@ public:
 		params.push_back(getEP("h"));
 		params.push_back(getEP("w"));
 		for(unsigned int i = 0; i < convs.size(); i++)
-			params.push_back(convs[i]->getEP("c"));
+			params.push_back(convs[i].getEP("c"));
 		for(unsigned int i = 0; i < convs.size(); i++)
-			params.push_back(convs[i]->getEP("k"));
+			params.push_back(convs[i].getEP("k"));
 
 		return params;
 	}
@@ -310,8 +310,8 @@ public:
 		double net_benefit = 0;
 		for(unsigned int i = 0; i < convs.size(); i++)
 		{
-			double next = convs[i]->computeNetBenefitOfIncreasing(EP_key);
-			cout << "Net benefit to increase " << EP_key << " for " << convs[i]->getName() << ": " << next << endl;
+			double next = convs[i].computeNetBenefitOfIncreasing(EP_key);
+			cout << "Net benefit to increase " << EP_key << " for " << convs[i].getName() << ": " << next << endl;
 			if(next > net_benefit)
 				net_benefit = next;
 		}
@@ -322,11 +322,11 @@ public:
 	{
 		bool change_made = false;
 
-		double min_EP = convs[0]->getNextEPValue(EP_key, increase);
+		double min_EP = convs[0].getNextEPValue(EP_key, increase);
 		double next_EP;
 		for(unsigned int i = 1; i < convs.size(); i++)
 		{
-			next_EP = convs[i]->getNextEPValue(EP_key, increase);
+			next_EP = convs[i].getNextEPValue(EP_key, increase);
 
 			if(next_EP < min_EP)
 				min_EP = next_EP;
@@ -337,7 +337,7 @@ public:
 
 		for(unsigned int i = 0; i < convs.size(); i++)
 		{
-			if(convs[i]->setEP(EP_key, min_EP))
+			if(convs[i].setEP(EP_key, min_EP))
 				change_made = true;
 		}
 
@@ -360,13 +360,13 @@ public:
 	//returns the Conv that currently has the longest time
 	Kernel* getLongestConv()
 	{
-		Kernel* longest_conv = convs[0];
+		Kernel* longest_conv = &convs[0];
 		double longest_time = longest_conv->getTime();
 		for(unsigned int i = 1; i < convs.size(); i++)
 		{
-			if(convs[i]->getTime() > longest_time)
+			if(convs[i].getTime() > longest_time)
 			{
-				longest_conv = convs[i];
+				longest_conv = &convs[i];
 				longest_time = longest_conv->getTime();
 			}
 		} 
@@ -376,13 +376,13 @@ public:
 	//returns the Conv that currently has the shortest time
 	Kernel* getShortestConv()
 	{
-		Kernel* shortest_conv = convs[0];
+		Kernel* shortest_conv = &convs[0];
 		double shortest_time = shortest_conv->getTime();
 		for(unsigned int i = 1; i < convs.size(); i++)
 		{
-			if(convs[i]->getTime() < shortest_time)
+			if(convs[i].getTime() < shortest_time)
 			{
-				shortest_conv = convs[i];
+				shortest_conv = &convs[i];
 				shortest_time = shortest_conv->getTime();
 			}
 		} 

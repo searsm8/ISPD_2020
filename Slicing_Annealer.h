@@ -62,7 +62,7 @@ public:
 	Slicing_Annealer() {}
 
 	Slicing_Annealer(int init_wirepenalty, int init_width, int init_height) 
-	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height), move_count(0), prev_move_num(0), reject_count(0), equilibrium_count(100)
+	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height), move_count(0), prev_move_num(0), reject_count(0), equilibrium_count(1000)
 	{
 		move_weights = {70, 20, 10, 0, 0}; //determines how often each type of move is done
 	}
