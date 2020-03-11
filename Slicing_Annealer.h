@@ -76,7 +76,11 @@ public:
 
 	vector<Block*> getBlocks() { return blocks; }
 
-	vector<Block*> getBestBlocks() { return best_blocks; }
+	vector<Block*> getBestBlocks()
+       	{
+	       	return blocks;
+	       	return best_blocks;
+       	}
 
 //MODIFIERS
 	

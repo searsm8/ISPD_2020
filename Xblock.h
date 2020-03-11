@@ -247,16 +247,8 @@ public:
 	vector<vector<int>> getRectangles()
 	{
 		vector<vector<int>> rects;
-		if(rotation == 0)
-		{
-			for(unsigned int i = 0; i < convs.size(); i++)
-				rects.push_back(vector<int>{ convs[i].x, convs[i].y, convs[i].width, convs[i].height});
-		}
-		else
-		{
-			for(unsigned int i = 0; i < convs.size(); i++)
-				rects.push_back(vector<int>{ convs[i].x, convs[i].y, convs[i].height, convs[i].width});
-		}
+		for(unsigned int i = 0; i < convs.size(); i++)
+			rects.push_back(vector<int>{ convs[i].getX(), convs[i].getY(), convs[i].getWidth(), convs[i].getHeight() });
 		return rects;
 	}
 
