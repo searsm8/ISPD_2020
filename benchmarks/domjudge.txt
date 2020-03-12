@@ -1,0 +1,45 @@
+(* Solver Parameters
+width=633
+height=633
+wdeltat=1
+wlength=1
+wadapter=1
+memlimit=24576
+*)
+(* Node Definitions *)
+input[ 0] n=[112 112 128]
+cblock[ 1] f=2048 h=14 w=14
+cblock[ 2] f=1024 h=28 w=28
+cblock[ 3] f=512 h=56 w=56
+cblock[ 4] f=256 h=112 w=112
+dblock[ 5] f=2048 h=7 w=7
+dblock[ 6] f=2048 h=7 w=7
+dblock[ 7] f=1024 h=14 w=14
+dblock[ 8] f=1024 h=14 w=14
+dblock[ 9] f=1024 h=14 w=14
+dblock[10] f=1024 h=14 w=14
+dblock[11] f=1024 h=14 w=14
+dblock[12] f=512 h=28 w=28
+dblock[13] f=512 h=28 w=28
+dblock[14] f=512 h=28 w=28
+dblock[15] f=256 h=56 w=56
+dblock[16] f=256 h=56 w=56
+output[17] n=[7 7 2048]
+(* Connectivity *)
+input[ 0]:_    -> cblock[ 4]:x, shape:[112][112][128]
+cblock[ 1]:y    -> dblock[ 6]:x, shape:[7][7][2048]
+cblock[ 2]:y    -> dblock[11]:x, shape:[14][14][1024]
+cblock[ 3]:y    -> dblock[14]:x, shape:[28][28][512]
+cblock[ 4]:y    -> dblock[16]:x, shape:[56][56][256]
+dblock[ 5]:y    -> output[17]:_, shape:[7][7][2048]
+dblock[ 6]:y    -> dblock[ 5]:x, shape:[7][7][2048]
+dblock[ 7]:y    -> cblock[ 1]:x, shape:[14][14][1024]
+dblock[ 8]:y    -> dblock[ 7]:x, shape:[14][14][1024]
+dblock[ 9]:y    -> dblock[ 8]:x, shape:[14][14][1024]
+dblock[10]:y    -> dblock[ 9]:x, shape:[14][14][1024]
+dblock[11]:y    -> dblock[10]:x, shape:[14][14][1024]
+dblock[12]:y    -> cblock[ 2]:x, shape:[28][28][512]
+dblock[13]:y    -> dblock[12]:x, shape:[28][28][512]
+dblock[14]:y    -> dblock[13]:x, shape:[28][28][512]
+dblock[15]:y    -> cblock[ 3]:x, shape:[56][56][256]
+dblock[16]:y    -> dblock[15]:x, shape:[56][56][256]
