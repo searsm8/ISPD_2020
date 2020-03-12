@@ -1,22 +1,15 @@
 //CometPlacer.cpp
 //author: Mark Sears
-//
 //Primary driver for Wafer Space Enginer placer
 //
-//if VISUALIZE is defined, then the SDL library
-//will be used to create a visualization
+//if VISUALIZE is defined, then the SDL libraryi will be used to create a visualization
 //if SDL is not installed, comment this #define
 //
-//#define VISUALIZE
+#define VISUALIZE
 
 //DEBUG controls print statements
 //
 //#define DEBUG
-
-//READ_FILE controls where input comes from
-//if not defined, read from stdin
-//otherwise, read from a specified file
-//#define READ_FILE
 
 #ifdef VISUALIZE
 #include "VisualizeWSE.h"
@@ -103,16 +96,25 @@ void CometPlacer::readNode(string line)
 				W = stoi(next_FP[1]);
 		}
 
-	//unsigned int i = 1;
-	Kernel* new_kernel;
+	unsigned int i = 1;
+	Kernel* new_kernel = NULL;
 	if((signed int)elements[0].find("dblock") != -1)
 	{
 		new_kernel = new Xblock(H, W, F, "dblock");
-		//new_kernel = new Dblock(H, W, F, i,i,i,i,i,i,i,i);
 	}
 	else if((signed int)elements[0].find("cblock") != -1)
 	{
 		new_kernel = new Xblock(H, W, F, "cblock");
+	}
+	else if((signed int)elements[0].find("conv") != -1)
+	{
+		//new_kernel = new Conv(H, W, i, i, i, i, i, i, i, i, i);
+	}
+
+	if(new_kernel == NULL)
+	{
+		cout << "new_kernel is NULL!" << endl;
+		return;
 	}
 
 	new_kernel->setName(elements[0]);
@@ -136,15 +138,17 @@ void CometPlacer::readConnection(string line)
 		return;
 
 	//find the kernels with the names indicated
-	Kernel* k1 = kernels[0]; 
-	Kernel* k2 = kernels[0]; 
-	for(unsigned int i = 1; i < kernels.size(); i++)
+	Kernel* k1 = NULL; 
+	Kernel* k2 = NULL; 
+	for(unsigned int i = 0; i < kernels.size(); i++)
 	{
 		if(kernels[i]->getName() == name1)
 			k1 = kernels[i];
 		if(kernels[i]->getName() == name2)
 			k2 = kernels[i];
 	}
+	if(k1 == NULL && k2 == NULL)
+		return;
 
 	if((signed int)name1.find("input") != -1)
 	{
@@ -152,6 +156,7 @@ void CometPlacer::readConnection(string line)
 		head = k2;
 		return;
 	}
+
 
 	//set the connection
 	k1->addNextKernel(k2);
@@ -162,27 +167,13 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 {
 	char c_line[1000];
 	string line, prev_line;
-#ifdef READ_FILE
-	FILE* kgraph_file = fopen(kgraph_filepath.c_str(), "r");
-	if(!kgraph_file)
-	{
-		cout << "****WARNING: could not open kgraph input file \""
-			<< kgraph_filepath<< "\"****\n";
-		return;
-	}
-#endif
 	int mode = 0; //indicates what is being read
 		//0: read nodes 
 		//1: read connectivity list
 	while( true )
 	{
 		//if( feof(kgraph_file)) cout << "feof!" << " size: " << kernels.size() << "\n";
-#ifdef READ_FILE
-		if( feof(kgraph_file)) break;
-		fscanf(kgraph_file, "%[^\n]\n", c_line);
-#else
 		scanf("%[^\n]\n", c_line);
-#endif
 
 		line = string(c_line);
 		if(line == prev_line)
@@ -194,28 +185,27 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 
 		if((signed int)line.find("Node Definitions") != -1)
 		{
-			mode = 0;
+			mode = 1;
 			continue;
 		}
 		if((signed int)line.find("Connectivity") != -1)
 		{
-			mode = 1;
+			mode = 2;
 			continue;
 		}
 
 		switch(mode)
 		{
 			case 0:
-				readNode(line);
 				break;
 			case 1:
+				readNode(line);
+				break;
+			case 2:
 				readConnection(line);
 				break;
 		}
 	} //end file input
-#ifdef READ_FILE
-	fclose(kgraph_file);
-#endif
 }
 
 //PRINT METHODS
@@ -231,18 +221,39 @@ void CometPlacer::printOutputToFile(string output_filepath)
 
 	vector<Kernel*> best_kernels = annealer.getBestBlocks();
 
+	output_file << "include \"common.paint\"" << endl;
+	cout << "include \"common.paint\"" << endl;
+
 	for(unsigned int i = 0; i < kernels.size(); i++)
 	{
 		Kernel* k = best_kernels[i];
 		output_file << "k" << (i+1) << " = " << k->getType() << "( ";
+		cout << "k" << (i+1) << " = " << k->getType() << "( ";
 	  	vector<int> params = k->getParameters();     
 		for(unsigned int i = 0; i < params.size(); i++)
+		{
 			output_file << params[i] << " ";
+			cout << params[i] << " ";
+		}
 		output_file << ")" << endl;
+		cout << ")" << endl;
 		output_file << "k" << (i+1) << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
+		cout << "k" << (i+1) << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
 	}
 
-	//print runtime stats:
+	//print last line
+	output_file << "kmap = union( ";	
+	cout << "kmap = union( ";	
+	for(unsigned int i = 0; i < kernels.size(); i++)
+	{
+		output_file << kernels[i]->getName() << " ";
+		cout << kernels[i]->getName() << " ";
+	}	
+	output_file << ")";
+	cout << ")";
+	
+/*
+ 	//print runtime stats:
 	double total_time_elapsed  = (std::clock() - start_time) / (double) CLOCKS_PER_SEC;
 	int move_count = annealer.getMoveCount();
 
@@ -253,11 +264,11 @@ void CometPlacer::printOutputToFile(string output_filepath)
 	cout << "**************************" << endl;
 
 	output_file << "\n\n****RUNTIME STATISTICS****\n\n";
-	output_file << "Total runtime: " << total_time_elapsed << "s" << endl;
+	output_file << "Total runtime: " << total_time_elapsed << "s (" << total_time_elapsed/60 << "m)" << endl;
 	output_file << "Number of layouts analyzed: " << move_count << endl;
 	output_file << "WSE competition cost: " << WSE_cost << endl;
 	output_file << "**************************" << endl;
-	
+*/	
 
 }
 
@@ -627,5 +638,5 @@ int main(int argc, char** argv)
 	//placer.updateVisual(true); 
 	placer.printOutputToFile(output_filepath);
 
-	return 1;
+	exit(0);
 }

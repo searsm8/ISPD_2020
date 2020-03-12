@@ -5,9 +5,9 @@ clean:
 	rm CometPlacer.out
 
 run:	
-	./CometPlacer.out kgraph=benchmarks/kgraph.txt output=results/kgraph.out wirepenalty=100 timelimit=60 width=633 height=633
+	./CometPlacer.out < benchmarks/kgraph.txt
 run2:	
-	./CometPlacer.out kgraph=benchmarks/kgraph2.txt output=results/kgraph2.out wirepenalty=100 timelimit=60 width=633 height=633
+	./CometPlacer.out < benchmarks/kgraph2.txt
 
 run4:
 	./CometPlacer.out kgraph=benchmarks/kgraph4.txt output=results/kgraph4.out wirepenalty=100 timelimit=60 width=633 height=633
