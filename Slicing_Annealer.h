@@ -34,8 +34,8 @@ private:
 	double max_width, max_height; //maximum size restrictions on the block layout
 
 	vector<int> move_weights; //determines how often each type of move is done
-	double reduction_factor = 0.9; //factor that reduces annealing temperature
-	int steps_per_temp = 100; //number of steps before reducing temperature
+	double reduction_factor; //factor that reduces annealing temperature
+	int steps_per_temp; //number of steps before reducing temperature
 	double temp; 	//current annealing temperature
 
 	Block_Wrapper<Block>* layout;
@@ -50,10 +50,11 @@ private:
 	vector< vector<int> > next_block_indices;
 
 	int move_count;
-	int move1_index;
+	vector<int> move_indices; //track the index that each move is performed at
 	int prev_move_num;
 	int reject_count;
-	int equilibrium_count;
+	int MIN_TEMP;
+	int epoch_count;
 
 public:
 
@@ -62,17 +63,22 @@ public:
 	Slicing_Annealer() {}
 
 	Slicing_Annealer(int init_wirepenalty, int init_width, int init_height) 
-	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height), move_count(0), prev_move_num(0), reject_count(0), equilibrium_count(100)
+	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height), reduction_factor(.9), steps_per_temp(1000), temp(0), prev_cost(0), move_count(0), prev_move_num(0), reject_count(0), MIN_TEMP(10), epoch_count(0)
 	{
 		move_weights = {70, 20, 10, 0, 0}; //determines how often each type of move is done
+		move_indices = {0, 0, 0, 0, 0}; 
 	}
 
 
 //ACCESSORS
 
+	int getEpochCount() { return epoch_count; }
+
 	int getMoveCount() { return move_count; }
 
 	double getTemp() { return temp; }
+
+	int getStepsPerTemp() { return steps_per_temp; }
 
 	vector<Block*> getBlocks() { return blocks; }
 
@@ -168,18 +174,19 @@ public:
 
 		int num_initialize_moves = blocks.size()*100;
 
-		printf("Initializing temp...(%d random moves)\n", num_initialize_moves);
+		printf("Initializing temp...(%d random moves)\n", 2*num_initialize_moves);
 		vector <double> deltas;
 		float new_cost, delta;
 			
-		//perform random cell swaps
+		//perform random cell swaps to obtain a randomized layout
 		for(int i = 0; i < num_initialize_moves; i++)
-			performMove(); //random move at very high temp
+			performMove(); //random move with no rejection
 			
 		//perform random cell swaps and record deltas	
 		for(int i = 0; i < num_initialize_moves; i++)
 		{
-			performMove(); //random move at very high temp
+			performMove(); //random move with no rejection
+			delete layout;
 			layout = findBestLayout();
 					
 			new_cost = costFunction();
@@ -205,23 +212,19 @@ public:
 		cout << "************************\n";
 		
 		prev_cost = costFunction();
+		resetRejectCount();
 
 		return temp;
 	}
 
-	void performAnnealing()
+	void performEpoch()
 	{
-		initializeTemp();
-		initializeOps();
+		cout << "\n\n****BEGIN EPOCH #" << ++epoch_count << endl;
+		resetRejectCount();
+		for(int i = 0; i < getStepsPerTemp(); i++)
+			performAnnealingStep();
 
-		while(temp > .1)
-		{
-			for(unsigned int i = 0; i < steps_per_temp; i++)
-			{
-				performAnnealingStep();
-			}
-			reduceTemp();
-		}
+		reduceTemp();
 	}
 
 	bool performAnnealingStep()
@@ -238,9 +241,7 @@ public:
 	{
 		//control the temperature schedule
 
-		if(temp < 1000)
-			reduction_factor = .998;
-		else if(temp < 10000)
+		if(temp < 10000)
 			reduction_factor = .995;
 		else if(temp < 50000)
 			reduction_factor = .99;
@@ -252,6 +253,8 @@ public:
 		temp *= reduction_factor;
 	}
 	
+	//TODO add more moves!
+	//move4() change a larger block orientation (how???)
 	void performMove()
 	{	
 		prev_move_num = 0;
@@ -297,19 +300,19 @@ public:
 		cout << "move1()" << endl;
 #endif
 
-		move1_index = rand() % (blocks.size()-1);
+		move_indices[1] = rand() % (blocks.size()-1);
 		prev_move_num = 1;
 	
-		Block* temp = blocks[move1_index];
-		blocks[move1_index] = blocks[move1_index+1];
-		blocks[move1_index+1] = temp;
+		Block* temp = blocks[move_indices[1]];
+		blocks[move_indices[1]] = blocks[move_indices[1]+1];
+		blocks[move_indices[1]+1] = temp;
 	}
 
 	void undoMove1()
 	{
-		Block* temp = blocks[move1_index];
-		blocks[move1_index] = blocks[move1_index+1];
-		blocks[move1_index+1] = temp;
+		Block* temp = blocks[move_indices[1]];
+		blocks[move_indices[1]] = blocks[move_indices[1]+1];
+		blocks[move_indices[1]+1] = temp;
 	}
 
 	//move M2
@@ -357,6 +360,7 @@ public:
 			while(ops[i].size() == 0)
 				i = rand() % (ops.size()-1);				
 			
+			//choose direction to bump operation: forward or backward
 			
 			if(previous_ops_count[i-1] < i-1) //check if this move would preserve balloting
 		  	{ 
@@ -462,6 +466,7 @@ public:
 	//return true if a move was made
 	bool evaluateMove()
 	{
+		delete layout; //delete previous layout to prevent memory leak
 		layout = findBestLayout();	
 		double new_cost = costFunction();
 		double delta = new_cost - prev_cost;
@@ -508,13 +513,21 @@ public:
 		return true;
 	}
 
+	int accept_count = 0;
+
 	void acceptMove(double new_cost)
 	{
 #ifdef DEBUG
 		cout << "***acceptMove()\n\n";
 #endif
-		if(new_cost < prev_cost)
-			reject_count = 0;
+		//if not an improvement, still make the change,
+		//but count it as a reject for equilibrium measurment
+		if(new_cost >= prev_cost)
+			reject_count++;
+		else accept_count++;
+	//	if(prev_move_num == 1)
+	//		return;
+
 
 		for(unsigned int i = 0; i < blocks.size(); i++)
 		{
@@ -524,8 +537,8 @@ public:
 			best_ops[i] = string(ops[i]);
 		}
 		prev_cost = new_cost;
-		delete prev_layout;
-		prev_layout = layout;// new Block_Wrapper<Kernel>(*layout);
+		//delete prev_layout; //delete previous layout to prevent memory leak
+		//prev_layout = layout;// new Block_Wrapper<Kernel>(*layout);
 	}
 
 	void rejectMove()
@@ -534,6 +547,13 @@ public:
 		cout << "***rejectMove()\n\n";
 #endif
 		reject_count++;
+		
+		//TODO add undoMove for other moves
+		if(prev_move_num == 1)
+		{
+			undoMove1();
+		//	return;
+		}
 
 		for(unsigned int i = 0; i < prev_blocks.size(); i++)
 		{
@@ -541,10 +561,7 @@ public:
 			ops[i] = string(prev_ops[i]);
 		}
 
-		if(prev_move_num == 1)
-			undoMove1();
-
-		delete layout;
+		delete layout; //delete previous layout to prevent memory leak
 		layout = new Block_Wrapper<Kernel>(*findBestLayout());
 
 	}
@@ -690,12 +707,22 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 		return b;
 	}
 
+	void resetRejectCount()
+	{
+		accept_count = 0;
+		reject_count = 0;
+	}
+
 	//return true if "equilibrium" is reached,
 	//when no new moves have been accepted for many moves
 	bool equilibriumReached()
 	{
-		return false;
-		if(reject_count >= equilibrium_count)
+		cout << "reject_count: " << reject_count << "\taccept_count: " << accept_count << "\tsteps_per_temp: " << steps_per_temp << endl;
+		//consider equilibrium reached if at least 99% of moves are rejected
+		if(reject_count >= steps_per_temp*0.99)
+			return true;
+		//or stop if reach a small enough temperature
+		else if(temp < MIN_TEMP)
 			return true;
 		else return false;
 	}

@@ -8,9 +8,10 @@ run:
 	./CometPlacer.out < benchmarks/kgraph.txt
 run2:	
 	./CometPlacer.out < benchmarks/kgraph2.txt
-
-run4:
-	./CometPlacer.out kgraph=benchmarks/kgraph4.txt output=results/kgraph4.out wirepenalty=100 timelimit=60 width=633 height=633
+run3:	
+	./CometPlacer.out < benchmarks/kgraph3.txt
+run4:	
+	./CometPlacer.out < benchmarks/kgraph4.txt
 	
 run18:
 	./CometPlacer.out kgraph=benchmarks/kgraph18.txt output=results/kgraph18.out wirepenalty=100 timelimit=60 width=633 height=633

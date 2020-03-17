@@ -24,9 +24,12 @@
 #include <cassert>
 
 //used to track program execution time
-std::clock_t start_time = std::clock();
-std::clock_t timestamp = std::clock();
-std::clock_t time_ref = std::clock();
+//std::clock_t start_time = std::clock();
+//std::clock_t timestamp = std::clock();
+//std::clock_t time_ref = std::clock();
+unsigned long start_time = std::clock();
+unsigned long timestamp = std::clock();
+unsigned long time_ref = std::clock();
 
 
 	//constructors
@@ -77,6 +80,16 @@ void CometPlacer::readNode(string line)
 	vector<string> elements = split(line, " ");
 	if(elements.size() == 0) return; //blank line!
 
+	//handle the case of "dblock[ 1]"
+	for(unsigned int i = 0; i < elements.size()-1; i++)
+	{
+		if(elements[i].back() == '[')
+		{
+			elements[i] += elements[i+1];
+			elements.erase(elements.begin()+i+1);
+		}
+	}
+
 	//ignore the input and outputs. No Kernel is created for them
 	if((signed int)elements[0].find("input") != -1 || (signed int)elements[0].find("output") != -1)
 		return;
@@ -96,7 +109,7 @@ void CometPlacer::readNode(string line)
 				W = stoi(next_FP[1]);
 		}
 
-	unsigned int i = 1;
+	//unsigned int i = 1;
 	Kernel* new_kernel = NULL;
 	if((signed int)elements[0].find("dblock") != -1)
 	{
@@ -116,17 +129,29 @@ void CometPlacer::readNode(string line)
 		cout << "new_kernel is NULL!" << endl;
 		return;
 	}
-
-	new_kernel->setName(elements[0]);
-	kernels.push_back(new_kernel);
+	else
+	{
+		new_kernel->setName(elements[0]);
+		kernels.push_back(new_kernel);
+	}
 
 } //end readNode()
 
 void CometPlacer::readConnection(string line)
 {
-	//cout << "readConnection()\nline: " << line << endl;
+//	cout << "readConnection()\nline: " << line << endl;
 	vector<string> elements = split(line, " ");
 	if(elements.size() == 0) return; //blank line!
+
+	//handle the case of "dblock[ 1]"
+	for(unsigned int i = 0; i < elements.size()-1; i++)
+	{
+		if(elements[i].back() == '[')
+		{
+			elements[i] += elements[i+1];
+			elements.erase(elements.begin()+i+1);
+		}
+	}
 
 	string name1 = split(elements[0], ":")[0];
 	string name2 = split(elements[2], ":")[0];
@@ -147,7 +172,7 @@ void CometPlacer::readConnection(string line)
 		if(kernels[i]->getName() == name2)
 			k2 = kernels[i];
 	}
-	if(k1 == NULL && k2 == NULL)
+	if(k2 == NULL)
 		return;
 
 	if((signed int)name1.find("input") != -1)
@@ -157,6 +182,8 @@ void CometPlacer::readConnection(string line)
 		return;
 	}
 
+	if(k1 == NULL)
+		return;
 
 	//set the connection
 	k1->addNextKernel(k2);
@@ -533,32 +560,29 @@ void CometPlacer::performAnnealing()
 	annealer.initializeTemp();
 	//updateVisual(true);
 
-	int epoch_count = 0;
-	while(true) //perform annealing steps until exit criteria is met
+	while(!annealer.equilibriumReached()) //perform annealing steps until exit criteria is met
 	{
-		cout << "\n\n****BEGIN EPOCH #" << ++epoch_count << endl;
-		for(unsigned int i = 0; i < 500; i++)
-		{
-			annealer.performAnnealingStep();
-		}
-		annealer.reduceTemp();
+
+		annealer.performEpoch();
+
+		//after each epoch, fetch kernel data and display status
 		kernels = annealer.getBlocks();
-		if(print) cout << "Kernel count: " << Kernel::getKernelCount() << "\t";
-		if(print) annealer.printMoveCount();
-		if(print) annealer.WSEcostFunction();
-		if(print) annealer.printTemp();
-		if(print) annealer.printCost();
-		if(print) printTimestamp();
-		updateVisual(NO_PAUSE, epoch_count);
-		if(annealer.equilibriumReached() || annealer.getTemp() < 1)
+		if(print)
 		{
-			cout << "\n**********\n";
-			cout << "EXIT CRITERIA MET..." << endl;
-			updateVisual(PAUSE);
-			annealer.printResults();
-			break;
+			cout << "Kernel count: " << Kernel::getKernelCount() << "\t";
+			annealer.printMoveCount();
+			annealer.WSEcostFunction();
+			annealer.printTemp();
+			annealer.printCost();
+			printTimestamp();
 		}
+		updateVisual(NO_PAUSE, annealer.getEpochCount());
 	}
+
+	cout << "\n**********\n";
+	cout << "EXIT CRITERIA MET..." << endl;
+	updateVisual(PAUSE);
+	annealer.printResults();
 	cout << "\n****ENDING performAnnealing()****\n";
 } //performAnnealing()
 

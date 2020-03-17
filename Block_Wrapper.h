@@ -68,6 +68,7 @@ public:
  */
 	~Block_Wrapper()
 	{
+
 		if(!base_level)
 		{
 			delete w1;

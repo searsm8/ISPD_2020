@@ -24,14 +24,30 @@ dblock[13] f=512 h=28 w=28
 dblock[14] f=512 h=28 w=28
 dblock[15] f=256 h=56 w=56
 dblock[16] f=256 h=56 w=56
-output[17] f=2048 h=14 w=14
+cblock[17] f=2048 h=14 w=14
+cblock[18] f=1024 h=28 w=28
+cblock[19] f=512 h=56 w=56
+cblock[20] f=256 h=112 w=112
+dblock[21] f=2048 h=7 w=7
+dblock[22] f=2048 h=7 w=7
+dblock[23] f=1024 h=14 w=14
+dblock[24] f=1024 h=14 w=14
+dblock[25] f=1024 h=14 w=14
+dblock[26] f=1024 h=14 w=14
+dblock[27] f=1024 h=14 w=14
+dblock[28] f=512 h=28 w=28
+dblock[29] f=512 h=28 w=28
+dblock[30] f=512 h=28 w=28
+dblock[31] f=256 h=56 w=56
+dblock[32] f=256 h=56 w=56
+output[33] n=[7 7 2048]
 (* Connectivity *)
 input[ 0]:_    -> cblock[ 4]:x, shape:[112][112][128]
 cblock[ 1]:y    -> dblock[ 6]:x, shape:[7][7][2048]
 cblock[ 2]:y    -> dblock[11]:x, shape:[14][14][1024]
 cblock[ 3]:y    -> dblock[14]:x, shape:[28][28][512]
 cblock[ 4]:y    -> dblock[16]:x, shape:[56][56][256]
-dblock[ 5]:y    -> output[17]:_, shape:[7][7][2048]
+dblock[ 5]:y    -> cblock[17]:_, shape:[7][7][2048]
 dblock[ 6]:y    -> dblock[ 5]:x, shape:[7][7][2048]
 dblock[ 7]:y    -> cblock[ 1]:x, shape:[14][14][1024]
 dblock[ 8]:y    -> dblock[ 7]:x, shape:[14][14][1024]
@@ -43,3 +59,19 @@ dblock[13]:y    -> dblock[12]:x, shape:[28][28][512]
 dblock[14]:y    -> dblock[13]:x, shape:[28][28][512]
 dblock[15]:y    -> cblock[ 3]:x, shape:[56][56][256]
 dblock[16]:y    -> dblock[15]:x, shape:[56][56][256]
+cblock[17]:y    -> cblock[18]:x, shape:[7][7][2048]
+cblock[18]:y    -> cblock[19]:x, shape:[14][14][1024]
+cblock[19]:y    -> cblock[20]:x, shape:[28][28][512]
+cblock[20]:y    -> dblock[21]:x, shape:[56][56][256]
+dblock[21]:y    -> dblock[22]:_, shape:[7][7][2048]
+dblock[22]:y    -> dblock[23]:x, shape:[7][7][2048]
+dblock[23]:y    -> dblock[24]:x, shape:[14][14][1024]
+dblock[24]:y    -> dblock[25]:x, shape:[14][14][1024]
+dblock[25]:y    -> dblock[26]:x, shape:[14][14][1024]
+dblock[26]:y    -> dblock[27]:x, shape:[14][14][1024]
+dblock[27]:y    -> dblock[28]:x, shape:[14][14][1024]
+dblock[28]:y    -> dblock[29]:x, shape:[28][28][512]
+dblock[29]:y    -> dblock[30]:x, shape:[28][28][512]
+dblock[30]:y    -> dblock[31]:x, shape:[28][28][512]
+dblock[31]:y    -> dblock[32]:x, shape:[56][56][256]
+dblock[32]:y    -> output[33]:x, shape:[56][56][256]
