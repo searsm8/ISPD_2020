@@ -16,7 +16,6 @@ using namespace std;
 
 //CONSTANTS
 	int VISUAL_UPDATE_INTERVAL = 10000; //how often the visualization gets updated
-	int MAX_ALLOWED_MEMORY = 48000; //for a single core on the WSE
 
 vector<string> split(const string& str, const string& delim)
 {

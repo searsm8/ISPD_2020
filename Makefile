@@ -2,7 +2,7 @@ all:
 	g++ -Wall -g CometPlacer.cpp $(shell pkg-config --cflags --libs sdl2) -std=c++11 -o CometPlacer.out
 
 clean:
-	rm CometPlacer.out
+	rm CometPlacer.out placement.paint
 
 run:	
 	./CometPlacer.out < benchmarks/kgraph.txt
@@ -12,9 +12,5 @@ run3:
 	./CometPlacer.out < benchmarks/kgraph3.txt
 run4:	
 	./CometPlacer.out < benchmarks/kgraph4.txt
-	
-run18:
-	./CometPlacer.out kgraph=benchmarks/kgraph18.txt output=results/kgraph18.out wirepenalty=100 timelimit=60 width=633 height=633
-
 run_single:	
-	./CometPlacer.out kgraph=benchmarks/single.txt output=results/single.out wirepenalty=100 timelimit=60 width=633 height=633
+	./CometPlacer.out < benchmarks/single.txt

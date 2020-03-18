@@ -17,12 +17,12 @@
 
 #include "CometPlacer.h"
 
-#include <cstdio>
-
 //uncomment to disable assert()
 //#define NDEBUG
 #include <cassert>
 
+//GLOBAL VARIABLES
+//
 //used to track program execution time
 //std::clock_t start_time = std::clock();
 //std::clock_t timestamp = std::clock();
@@ -30,6 +30,8 @@
 unsigned long start_time = std::clock();
 unsigned long timestamp = std::clock();
 unsigned long time_ref = std::clock();
+
+int MAX_ALLOWED_MEMORY = 48000; //for a single core on the WSE
 
 
 	//constructors
@@ -72,6 +74,23 @@ cout << kernels[i]->getName() << "  AR: " << new_AR << endl;
 	assert(kernels.size() != 0);
 	setInitialPlacement();
 	computeAvgTime();
+}
+
+
+void CometPlacer::readParameter(string line)
+{
+	vector<string> elements = split(line, "=");
+	if(elements.size() == 0) return; //blank line!
+
+	if((signed int)elements[0].find("width") != -1)
+		width = stoi(elements[1]);
+	else if((signed int)elements[0].find("height") != -1)
+		height = stoi(elements[1]);
+	else if((signed int)elements[0].find("wlength") != -1)
+		wirepenalty = stoi(elements[1]);
+	else if((signed int)elements[0].find("memlimit") != -1)
+		MAX_ALLOWED_MEMORY = stoi(elements[1]);
+
 }
 
 void CometPlacer::readNode(string line)
@@ -195,8 +214,6 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 	char c_line[1000];
 	string line, prev_line;
 	int mode = 0; //indicates what is being read
-		//0: read nodes 
-		//1: read connectivity list
 	while( true )
 	{
 		//if( feof(kgraph_file)) cout << "feof!" << " size: " << kernels.size() << "\n";
@@ -210,14 +227,19 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 		//skip commented lines
 		if(line[0] == '/' && line[1] == '/') continue;
 
-		if((signed int)line.find("Node Definitions") != -1)
+		if((signed int)line.find("Solver Parameters") != -1)
 		{
 			mode = 1;
 			continue;
 		}
-		if((signed int)line.find("Connectivity") != -1)
+		if((signed int)line.find("Node Definitions") != -1)
 		{
 			mode = 2;
+			continue;
+		}
+		if((signed int)line.find("Connectivity") != -1)
+		{
+			mode = 3;
 			continue;
 		}
 
@@ -226,9 +248,12 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 			case 0:
 				break;
 			case 1:
-				readNode(line);
+				readParameter(line);
 				break;
 			case 2:
+				readNode(line);
+				break;
+			case 3:
 				readConnection(line);
 				break;
 		}
@@ -251,22 +276,9 @@ void CometPlacer::printOutputToFile(string output_filepath)
 	output_file << "include \"common.paint\"" << endl;
 	cout << "include \"common.paint\"" << endl;
 
-	for(unsigned int i = 0; i < kernels.size(); i++)
-	{
-		Kernel* k = best_kernels[i];
-		output_file << "k" << (i+1) << " = " << k->getType() << "( ";
-		cout << "k" << (i+1) << " = " << k->getType() << "( ";
-	  	vector<int> params = k->getParameters();     
-		for(unsigned int i = 0; i < params.size(); i++)
-		{
-			output_file << params[i] << " ";
-			cout << params[i] << " ";
-		}
-		output_file << ")" << endl;
-		cout << ")" << endl;
-		output_file << "k" << (i+1) << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
-		cout << "k" << (i+1) << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
-	}
+	//print the kernels in the order from input to ouput
+	//start with HEAD, call recursively
+	printKernelToFile(head, output_file);
 
 	//print last line
 	output_file << "kmap = union( ";	
@@ -278,39 +290,46 @@ void CometPlacer::printOutputToFile(string output_filepath)
 	}	
 	output_file << ")";
 	cout << ")";
+	cout << endl;
 	
-/*
- 	//print runtime stats:
-	double total_time_elapsed  = (std::clock() - start_time) / (double) CLOCKS_PER_SEC;
-	int move_count = annealer.getMoveCount();
-
-	cout << "\n\n****RUNTIME STATISTICS****\n\n";
-	printTimestamp();
-	cout << "Number of layouts analyzed: " << move_count << endl;
-	double WSE_cost = annealer.WSEcostFunction(); 
-	cout << "**************************" << endl;
-
-	output_file << "\n\n****RUNTIME STATISTICS****\n\n";
-	output_file << "Total runtime: " << total_time_elapsed << "s (" << total_time_elapsed/60 << "m)" << endl;
-	output_file << "Number of layouts analyzed: " << move_count << endl;
-	output_file << "WSE competition cost: " << WSE_cost << endl;
-	output_file << "**************************" << endl;
-*/	
-
 }
+
+void CometPlacer::printKernelToFile(Kernel* k, ofstream& output_file)
+{
+	output_file << k->getName() << " = " << k->getType() << "( ";
+	cout << k->getName() << " = " << k->getType() << "( ";
+	vector<int> params = k->getParameters();     
+	for(unsigned int i = 0; i < params.size(); i++)
+	{
+		output_file << params[i] << " ";
+		cout << params[i] << " ";
+	}
+	output_file << ")" << endl;
+	cout << ")" << endl;
+
+
+	output_file << k->getName() << " : name('" << k->getName() << ")" << endl;;
+	cout << k->getName() << " : name('" << k->getName() << ")" << endl;;
+
+	output_file << k->getName() << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
+	cout << k->getName() << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
+
+	//call recursively to all kernels that this kernel points to
+	vector<Kernel*> next_kernels = k->getNextKernels();
+
+	for(unsigned int i = 0; i < next_kernels.size(); i++)
+		printKernelToFile(next_kernels[i], output_file);
+} //end printKernelToFile()
 
 //print general info about the WSE layout
 void CometPlacer::printInfo()
 {
 	cout << "\n****WSE INFO****\n";
 	cout << "Wafer size: " << width << "x" << height << endl;
-	cout << "#Kernels: " << kernels.size() << endl;
-	cout << "Iteration: " << iteration << endl; 
+	cout << "# of Kernels: " << kernels.size() << endl;
 	cout << "wirepenalty: " << wirepenalty << endl; 
 	cout << "timelimit: " << timelimit << endl; 
-	cout << "Head Kernel: " << head->getName() << endl;
-	cout << "Total Wire Penalty: " << computeL1Penalty() << endl;
-	cout << "Max Time: " << getLongestTime() << endl;
+	cout << "memlimit: " << MAX_ALLOWED_MEMORY << endl; 
 	cout << endl;
 }
 
@@ -656,11 +675,12 @@ int main(int argc, char** argv)
 
 	placer.enforceMemoryConstraint();
 	//placer.updateVisual(true); 
-	placer.inflateKernelSize(0.8);
+	placer.inflateKernelSize(0.6);
 	//placer.updateVisual(true); 
 	placer.performAnnealing();
 	//placer.updateVisual(true); 
 	placer.printOutputToFile(output_filepath);
+	placer.updateVisual(true); 
 
 	exit(0);
 }

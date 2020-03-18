@@ -9,6 +9,7 @@
 #include "util.h"
 #include "Xblock.h"
 #include "Slicing_Annealer.h"
+#include <cstdio>
 
 class CometPlacer
 {
@@ -42,6 +43,7 @@ public:
 	CometPlacer(string kgraph_filename, string output, int wirepenalty, int timelimit, int width, int height);
 	
 
+	void readParameter(string line);
 	void readNode(string line);
 	void readConnection(string line);
 	
@@ -52,6 +54,7 @@ public:
 	//print the current best solution to file
 	//specifying block placements and parameters
 	void printOutputToFile(string output_filepath);
+	void printKernelToFile(Kernel* k, ofstream& output_file);
 	
 	//print general info about the WSE layout
 	void printInfo();
