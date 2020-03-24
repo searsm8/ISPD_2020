@@ -5,7 +5,7 @@
 //if VISUALIZE is defined, then the SDL libraryi will be used to create a visualization
 //if SDL is not installed, comment this #define
 //
-#define VISUALIZE
+//#define VISUALIZE
 
 //DEBUG controls print statements
 //
@@ -31,10 +31,8 @@ unsigned long start_time = std::clock();
 unsigned long timestamp = std::clock();
 unsigned long time_ref = std::clock();
 
-int MAX_ALLOWED_MEMORY = 48000; //for a single core on the WSE
 
-
-	//constructors
+	//CONSTRUCTORS
 CometPlacer::CometPlacer()
 {}
 
@@ -74,6 +72,9 @@ cout << kernels[i]->getName() << "  AR: " << new_AR << endl;
 	assert(kernels.size() != 0);
 	setInitialPlacement();
 	computeAvgTime();
+
+	for(unsigned int i = 0; i < kernels.size(); i++)
+		fixName(kernels[i], i+1);
 }
 
 
@@ -89,7 +90,7 @@ void CometPlacer::readParameter(string line)
 	else if((signed int)elements[0].find("wlength") != -1)
 		wirepenalty = stoi(elements[1]);
 	else if((signed int)elements[0].find("memlimit") != -1)
-		MAX_ALLOWED_MEMORY = stoi(elements[1]);
+		MAX_ALLOWED_MEMORY = stoi(elements[1])/1;
 
 }
 
@@ -114,29 +115,32 @@ void CometPlacer::readNode(string line)
 		return;
 
 	//for other kernels, create the appropriate object
-		int F=0, H=0, W=0;
+		//int F=0, H=0, W=0, T=0;
+		map<string, int> formal_params;
 		//read in all the Formal Parameters
 		for(unsigned int i = 1; i < elements.size(); i++)
 		{
 			vector<string> next_FP = split(elements[i], "=");
 
 			if(next_FP[0] == "f")
-				F = stoi(next_FP[1]);
+				formal_params["F"] = stoi(next_FP[1]);
 			else if(next_FP[0] == "h")
-				H = stoi(next_FP[1]);
+				formal_params["H"] = stoi(next_FP[1]);
 			else if(next_FP[0] == "w")
-				W = stoi(next_FP[1]);
+				formal_params["W"] = stoi(next_FP[1]);
+			else if(next_FP[0] == "t")
+				formal_params["T"] = stoi(next_FP[1]);
 		}
 
 	//unsigned int i = 1;
 	Kernel* new_kernel = NULL;
 	if((signed int)elements[0].find("dblock") != -1)
 	{
-		new_kernel = new Xblock(H, W, F, "dblock");
+		new_kernel = new Xblock(formal_params, "dblock");
 	}
 	else if((signed int)elements[0].find("cblock") != -1)
 	{
-		new_kernel = new Xblock(H, W, F, "cblock");
+		new_kernel = new Xblock(formal_params, "cblock");
 	}
 	else if((signed int)elements[0].find("conv") != -1)
 	{
@@ -262,6 +266,24 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 
 //PRINT METHODS
 //
+
+void CometPlacer::printPercentFilled()
+{
+	double filled_percent = (double)(computeTotalKernelArea()) / (double)(getWaferArea()); 
+	cout << "Kernels fill " << filled_percent << "% of wafer." << endl;
+}
+
+//fix Kernel names so they match expected output format e.g. "k03"
+void CometPlacer::fixName(Kernel* k, int ID)
+{
+	string new_name = "k";
+	if(ID < 10)
+		new_name += "0";
+	new_name += to_string(ID);
+
+	k->setName(new_name);
+}
+
 //print the current best solution to file
 //specifying block placements and parameters
 void CometPlacer::printOutputToFile(string output_filepath)
@@ -283,15 +305,21 @@ void CometPlacer::printOutputToFile(string output_filepath)
 	//print last line
 	output_file << "kmap = union( ";	
 	cout << "kmap = union( ";	
-	for(unsigned int i = 0; i < kernels.size(); i++)
-	{
-		output_file << kernels[i]->getName() << " ";
-		cout << kernels[i]->getName() << " ";
-	}	
-	output_file << ")";
-	cout << ")";
-	cout << endl;
-	
+	printUnion(head, output_file);
+	output_file << ")\n";
+	cout << ")\n";
+}
+
+void CometPlacer::printUnion(Kernel* k, ofstream& output_file)
+{
+	output_file << k->getName() << " ";
+	cout << k->getName() << " ";
+
+	//call recursively to all kernels that this kernel points to
+	vector<Kernel*> next_kernels = k->getNextKernels();
+
+	for(unsigned int i = 0; i < next_kernels.size(); i++)
+		printUnion(next_kernels[i], output_file);
 }
 
 void CometPlacer::printKernelToFile(Kernel* k, ofstream& output_file)
@@ -325,10 +353,11 @@ void CometPlacer::printKernelToFile(Kernel* k, ofstream& output_file)
 void CometPlacer::printInfo()
 {
 	cout << "\n****WSE INFO****\n";
-	cout << "Wafer size: " << width << "x" << height << endl;
+	cout << "Max Wafer size: " << width << "x" << height << endl;
+	cout << "Used space: " << annealer.getLayoutWidth() << "x" << annealer.getLayoutHeight() << " = " << annealer.getLayoutWidth() * annealer.getLayoutHeight() << endl;
 	cout << "# of Kernels: " << kernels.size() << endl;
 	cout << "wirepenalty: " << wirepenalty << endl; 
-	cout << "timelimit: " << timelimit << endl; 
+	cout << "timelimit: " << timelimit << "s " << endl; 
 	cout << "memlimit: " << MAX_ALLOWED_MEMORY << endl; 
 	cout << endl;
 }
@@ -357,7 +386,7 @@ void CometPlacer::printTimeAndArea()
 enum PAUSE
 {
 	PAUSE = true,
-	NO_PAUSE = false
+	NOPAUSE = false
 };
 
 //visualize the kernels on the WSE
@@ -548,11 +577,12 @@ bool CometPlacer::enforceMemoryConstraint()
 		//memory constraint check here!
 		while(k->getMemory() > MAX_ALLOWED_MEMORY)
 		{
+//			cout << "To meet memory constraint, increased size of " << k->getName() << "\t(Memory = " << k->getMemory() << ")" << endl;
 			k->increaseSize();
 			k->computePerformance();
 		}
 
-		cout << k->getName() << " meets memory contraints with " << k->getMemory() << " kB/core!\n";
+		cout << k->getName() << " meets memory constraints with " << k->getMemory() << " kB/core!\n";
 
 	}
 
@@ -577,7 +607,6 @@ void CometPlacer::performAnnealing()
 	annealer.setBlocks(kernels);
 	annealer.initializeOps();
 	annealer.initializeTemp();
-	//updateVisual(true);
 
 	while(!annealer.equilibriumReached()) //perform annealing steps until exit criteria is met
 	{
@@ -593,9 +622,12 @@ void CometPlacer::performAnnealing()
 			annealer.WSEcostFunction();
 			annealer.printTemp();
 			annealer.printCost();
+			printPercentFilled();
 			printTimestamp();
+		//	printKernels();
+		//	printTimeAndArea();
 		}
-		updateVisual(NO_PAUSE, annealer.getEpochCount());
+		updateVisual(NOPAUSE, annealer.getEpochCount());
 	}
 
 	cout << "\n**********\n";
@@ -669,18 +701,27 @@ int main(int argc, char** argv)
 
 	CometPlacer placer = CometPlacer(kgraph_filepath, output_filepath, wirepenalty, timelimit, width, height);
 
+	//placer.printInfo();
 	placer.updateVisual();
 	//placer.printTimeAndArea();
-	//placer.printKernels();
+//	placer.printKernels();
 
 	placer.enforceMemoryConstraint();
-	//placer.updateVisual(true); 
-	placer.inflateKernelSize(0.6);
-	//placer.updateVisual(true); 
+//	placer.updateVisual(PAUSE); 
+	placer.inflateKernelSize(0.8);
+	placer.enforceMemoryConstraint();
+//	placer.printKernels();
+//	placer.printTimeAndArea();
+	placer.updateVisual(NOPAUSE); 
+
 	placer.performAnnealing();
 	//placer.updateVisual(true); 
 	placer.printOutputToFile(output_filepath);
-	placer.updateVisual(true); 
+//	placer.printKernels();
+//	placer.printTimeAndArea();
+	placer.printInfo();
+	placer.enforceMemoryConstraint();
+	placer.updateVisual(PAUSE); 
 
 	exit(0);
 }

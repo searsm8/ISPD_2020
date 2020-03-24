@@ -80,6 +80,10 @@ public:
 
 	int getStepsPerTemp() { return steps_per_temp; }
 
+	int getLayoutWidth() { return layout->getWidth(); }
+
+	int getLayoutHeight() { return layout->getHeight(); }
+
 	vector<Block*> getBlocks() { return blocks; }
 
 	vector<Block*> getBestBlocks()

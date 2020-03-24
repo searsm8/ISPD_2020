@@ -2,7 +2,7 @@ all:
 	g++ -Wall -g CometPlacer.cpp $(shell pkg-config --cflags --libs sdl2) -std=c++11 -o CometPlacer.out
 
 clean:
-	rm CometPlacer.out placement.paint
+	rm CometPlacer.out placement.paint .*swp
 
 run:	
 	./CometPlacer.out < benchmarks/kgraph.txt

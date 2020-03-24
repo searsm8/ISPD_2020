@@ -55,8 +55,10 @@ public:
 
 	int computeMemory()
 	{
-		memory = (getFP("C")/getEP("c")) * (getFP("K")/getEP("k")) * getFP("R") * getFP("S") +
-			((getFP("W")+getFP("S")-1)/getEP("w")) * ((getFP("H")+getFP("R")-1)/getEP("h")) * (getFP("K")/getEP("k"));
+		//memory = (getFP("C")/getEP("c")) * (getFP("K")/getEP("k")) * getFP("R") * getFP("S") +
+		//	((getFP("W")+getFP("S")-1)/getEP("w")) * ((getFP("H")+getFP("R")-1)/getEP("h")) * (getFP("K")/getEP("k"));
+		memory = ceil(getFP("C")/getEP("c")) * ceil(getFP("K")/getEP("k")) * getFP("R") * getFP("S") +
+			ceil((getFP("W")+getFP("S")-1)/getEP("w")) * ceil((getFP("H")+getFP("R")-1)/getEP("h")) * ceil(getFP("K")/getEP("k"));
 		return memory;
 	}
 
@@ -93,7 +95,7 @@ public:
 			return false;
 
 		EP[key] = val;
-		computePerformance(); //is this needed here?
+	//	computePerformance(); //is this needed here?
 		return true;
 	}
 

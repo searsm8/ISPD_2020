@@ -24,13 +24,15 @@ public:
 //	vector<Conv*> convs;
 	static int xblock_count;
 
-	//constructors
-
-	Xblock(int H, int W, int F, string X_type)
+	Xblock(map<string, int> formal_params, string X_type)
 	{
 		unsigned int i = 1; //initial EP value
 		type = X_type;
 		//initialize internal convolutional kernels
+
+		int H = formal_params["H"];
+		int W = formal_params["W"];
+		int F = formal_params["F"];
 
 		if(type == "dblock")
 		{
@@ -43,16 +45,14 @@ public:
 		if(type == "cblock")
 		{
 			convs.reserve(4);
-			convs.push_back(Conv(H, W, 1, 1, F,   F/4, 1, i, i, i, i));
-			convs.push_back(Conv(H, W, 3, 3, F/4, F/4, 2, i, i, i, i));
-			convs.push_back(Conv(H, W, 1, 1, F/4, F,   1, i, i, i, i));
-			convs.push_back(Conv(H, W, 1, 1, F/2, F,   2, i, i, i, i));
+			convs.push_back(Conv(H, W, 1, 1,  F/2, F/4, 1, i, i, i, i));
+			convs.push_back(Conv(H, W, 3, 3,  F/4, F/4, 2, i, i, i, i));
+			convs.push_back(Conv(H/2,W/2, 1,1,F/4, F,   1, i, i, i, i));
+			convs.push_back(Conv(H, W, 1, 1,  F/2, F,   2, i, i, i, i));
 		}
 		
 		//initialize formal parameters
-		FP.insert(pair<string, int>("H", H));	
-		FP.insert(pair<string, int>("W", W));	
-		FP.insert(pair<string, int>("F", F));	
+		FP = formal_params;
 
 		//initialize Execution paramaters
 		EP.insert(pair<string, int>("h", i));	
@@ -64,8 +64,14 @@ public:
 		width = -1;
 		time = -1;
 		memory = -1;
-
+		
 		xblock_count++;
+		/*
+		name = "k";
+	       	if(xblock_count < 10)
+		       name += 	"0";
+		name += to_string(xblock_count);
+		*/
 	}
 /*	
 	//take in a new Execution Parameter
@@ -274,8 +280,18 @@ public:
 	void printParameters()
 	{
 		Kernel::printParameters();
+		vector<int> params = getParameters();
+
+		cout << getName() << " : (";
+		for(unsigned int i = 0; i < params.size(); i++)
+		{
+			cout << params[i] << " ";
+		}
+		cout << ")" << endl;
+
 		for(unsigned int i = 0; i < convs.size(); i++)
 			convs[i].printParameters();
+
 	}
 
 	vector<int> getParameters()
@@ -285,10 +301,17 @@ public:
 		params.push_back(getFP("H"));
 		params.push_back(getFP("W"));
 		params.push_back(getFP("F"));
+		//if(type == "cblock")
+		//	params.push_back(getFP("T"));
 
-		//add Formal Parameters
-		params.push_back(getEP("h"));
-		params.push_back(getEP("w"));
+		//add Execution Parameters
+		params.push_back(convs[0].getEP("h"));
+		params.push_back(convs[0].getEP("w"));
+		
+		//extra special parameter???
+		//if(type == "cblock")
+		//	params.push_back(1);
+		//
 		for(unsigned int i = 0; i < convs.size(); i++)
 			params.push_back(convs[i].getEP("c"));
 		for(unsigned int i = 0; i < convs.size(); i++)
@@ -412,12 +435,8 @@ public:
 			if(getEP("w") >= getEP("c") && getEP("w") >= getEP("h"))
 				EP_to_increase = "w";
 		}
-
-
 		//increase the next EP	
 		bool success = setEPtoNextValue(EP_to_increase, increase);
-
-
 		return success;
 	}
 

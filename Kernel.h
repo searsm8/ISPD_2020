@@ -16,6 +16,7 @@
 #include <ctime>
 #include <iostream>
 #include <fstream>
+#include "util.h"
 
 using namespace std;
 
@@ -213,8 +214,8 @@ public:
 	{
 //cout << "computePossibleKernels()\n";
 
-	//	vector<double> target_ARs = {0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.2, 1.5, 2,  1}; 
-		vector<double> target_ARs = {0.1, 0.25, 0.33, 0.5, 0.75, 1}; 
+	//	vector<double> target_ARs = {0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.2, 1.5, 2, 3, 4, 1}; 
+		vector<double> target_ARs = {0.25, 0.33, 0.5, 0.75, 1}; 
 
 		for( unsigned int i = 0; i < target_ARs.size(); i++)
 		{
@@ -292,14 +293,17 @@ public:
 				if(getAR() <= getTargetAR())
 					break;
 			}
-					
-			if(getTime() > target_time)
+			if(getTime() < target_time)
+			{
+				if(!decreaseSize())
+					break;
+			}
+			else if(!increaseSize())
 			{
 				if(!increaseSize())
 					break;
 			}
-			else if(!decreaseSize())
-				break;
+
 		
 			computePerformance();
 //			cout <<"AFTER MOVE: Target AR: "<<getTargetAR()<<" Actual AR: " << getAR() << endl;
@@ -309,22 +313,24 @@ public:
 		//try to get back to the original area
 		while(getTime() < target_time) 
 		{
-//cout << "DECREASE SIZE!\n";
-//printPerformance();
 			if(!decreaseSize())
 				break;
 			computePerformance();
 		}
 		while(getTime() > target_time) 
 		{
-//cout << "INCREASE SIZE!\n";
-//printPerformance();
 			if(!increaseSize())
 				break;
 			computePerformance();
 		}
-//cout << "target_AR: " << target_AR << " actual: " << getAR() << endl;
-//printPerformance();
+
+		//ensure that the memory constraint is still met
+		while( getMemory() > MAX_ALLOWED_MEMORY)
+		{
+			if(!increaseSize())
+				break;
+			computePerformance();
+		}
 
 	}
 

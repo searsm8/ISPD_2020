@@ -51,9 +51,15 @@ public:
 	void readKgraph(string kgraph_filepath);
 
 //PRINT METHODS
+
+	void printPercentFilled();
+
+	void fixName(Kernel* k, int ID=0);
+
 	//print the current best solution to file
 	//specifying block placements and parameters
 	void printOutputToFile(string output_filepath);
+	void printUnion(Kernel* k, ofstream& output_file);
 	void printKernelToFile(Kernel* k, ofstream& output_file);
 	
 	//print general info about the WSE layout
