@@ -34,6 +34,23 @@ public:
 
 	}
 
+
+	Conv(map<string, int> formal_params)
+	{
+		unsigned int i = 1; //initial EP value
+		
+		//initialize formal parameters
+		FP = formal_params;
+
+		//initialize Execution paramaters
+		EP.insert(pair<string, int>("h", i));	
+		EP.insert(pair<string, int>("w", i));	
+		EP.insert(pair<string, int>("c", i));	
+		EP.insert(pair<string, int>("k", i));	
+	
+		type = "conv";
+	}
+
 	int computeHeight()
 	{
 		height = EP["h"] * EP["w"] * (EP["c"]+1);
@@ -55,10 +72,10 @@ public:
 
 	int computeMemory()
 	{
-		//memory = (getFP("C")/getEP("c")) * (getFP("K")/getEP("k")) * getFP("R") * getFP("S") +
-		//	((getFP("W")+getFP("S")-1)/getEP("w")) * ((getFP("H")+getFP("R")-1)/getEP("h")) * (getFP("K")/getEP("k"));
-		memory = ceil(getFP("C")/getEP("c")) * ceil(getFP("K")/getEP("k")) * getFP("R") * getFP("S") +
-			ceil((getFP("W")+getFP("S")-1)/getEP("w")) * ceil((getFP("H")+getFP("R")-1)/getEP("h")) * ceil(getFP("K")/getEP("k"));
+		memory = (getFP("C")/getEP("c")) * (getFP("K")/getEP("k")) * getFP("R") * getFP("S") +
+			((getFP("W")+getFP("S")-1)/getEP("w")) * ((getFP("H")+getFP("R")-1)/getEP("h")) * (getFP("K")/getEP("k"));
+	//	memory = ceil(getFP("C")/getEP("c")) * ceil(getFP("K")/getEP("k")) * getFP("R") * getFP("S") +
+	//		ceil((getFP("W")+getFP("S")-1)/getEP("w")) * ceil((getFP("H")+getFP("R")-1)/getEP("h")) * ceil(getFP("K")/getEP("k"));
 		return memory;
 	}
 
@@ -194,6 +211,35 @@ public:
 
 		return new_EP;
 	}
+
+	bool changeWidth(bool increase=true)
+	{
+		return setEPtoNextValue("k", increase);
+	}
+
+	bool changeHeight(bool increase=true)
+	{
+		string EP_to_increase = "c";
+
+		if(increase)
+		{
+			//find the smallest EP that affects height
+			if(getEP("h") <= getEP("c") && getEP("h") <= getEP("w"))
+				EP_to_increase = "h";
+			if(getEP("w") <= getEP("c") && getEP("w") <= getEP("h"))
+				EP_to_increase = "w";
+		}
+		else
+		{
+			//find the largest EP that affects height
+			if(getEP("h") >= getEP("c") && getEP("h") >= getEP("w"))
+				EP_to_increase = "h";
+			if(getEP("w") >= getEP("c") && getEP("w") >= getEP("h"))
+				EP_to_increase = "w";
+		}
+		return setEPtoNextValue(EP_to_increase, increase);
+	}
+	
 
 };
 #endif

@@ -5,7 +5,7 @@
 //if VISUALIZE is defined, then the SDL libraryi will be used to create a visualization
 //if SDL is not installed, comment this #define
 //
-//#define VISUALIZE
+#define VISUALIZE
 
 //DEBUG controls print statements
 //
@@ -31,6 +31,7 @@ unsigned long start_time = std::clock();
 unsigned long timestamp = std::clock();
 unsigned long time_ref = std::clock();
 
+int WSE_width, WSE_height;
 
 	//CONSTRUCTORS
 CometPlacer::CometPlacer()
@@ -42,6 +43,9 @@ CometPlacer::CometPlacer(string kgraph_filepath, string output, int wirepenalty,
 
 	//read the input file and populate the kernels
 	readKgraph(kgraph_filepath);	
+	WSE_width = width;
+	WSE_height = height;
+	
 #ifdef VISUALIZE
 	window = createWSE(width, height);
 #endif
@@ -90,7 +94,7 @@ void CometPlacer::readParameter(string line)
 	else if((signed int)elements[0].find("wlength") != -1)
 		wirepenalty = stoi(elements[1]);
 	else if((signed int)elements[0].find("memlimit") != -1)
-		MAX_ALLOWED_MEMORY = stoi(elements[1])/1;
+		MAX_ALLOWED_MEMORY = stoi(elements[1]);
 
 }
 
@@ -122,6 +126,12 @@ void CometPlacer::readNode(string line)
 		{
 			vector<string> next_FP = split(elements[i], "=");
 
+			next_FP[0] = toupper((char &)next_FP[0][0]);
+
+			formal_params[next_FP[0]] = stoi(next_FP[1]);
+
+			/*
+
 			if(next_FP[0] == "f")
 				formal_params["F"] = stoi(next_FP[1]);
 			else if(next_FP[0] == "h")
@@ -130,33 +140,28 @@ void CometPlacer::readNode(string line)
 				formal_params["W"] = stoi(next_FP[1]);
 			else if(next_FP[0] == "t")
 				formal_params["T"] = stoi(next_FP[1]);
+			*/
 		}
 
 	//unsigned int i = 1;
 	Kernel* new_kernel = NULL;
 	if((signed int)elements[0].find("dblock") != -1)
 	{
-		new_kernel = new Xblock(formal_params, "dblock");
+		new_kernel = new Xblock(formal_params, "dblock", WSE_width, WSE_height);
 	}
 	else if((signed int)elements[0].find("cblock") != -1)
 	{
-		new_kernel = new Xblock(formal_params, "cblock");
+		new_kernel = new Xblock(formal_params, "cblock", WSE_width, WSE_height);
 	}
 	else if((signed int)elements[0].find("conv") != -1)
 	{
-		//new_kernel = new Conv(H, W, i, i, i, i, i, i, i, i, i);
+		new_kernel = new Conv(formal_params, WSE_width, WSE_height);
 	}
 
-	if(new_kernel == NULL)
-	{
-		cout << "new_kernel is NULL!" << endl;
-		return;
-	}
-	else
-	{
-		new_kernel->setName(elements[0]);
-		kernels.push_back(new_kernel);
-	}
+	assert(new_kernel != NULL);
+	
+	new_kernel->setName(elements[0]);
+	kernels.push_back(new_kernel);
 
 } //end readNode()
 
@@ -366,6 +371,9 @@ void CometPlacer::printInfo()
 void CometPlacer::printKernels()
 {
 	cout << "\nKernel Information:\n";
+	cout << "Longest Time: " << getLongestTime() << endl;
+	cout << "Shortest Time: " << getShortestTime() << endl;
+	cout << "Average Time: " << getAverageTime() << endl;
 	for(Kernel* k : kernels)
 	{
 		k->printPerformance();
@@ -374,7 +382,6 @@ void CometPlacer::printKernels()
 
 void CometPlacer::printTimeAndArea()
 {
-	cout << "Longest Time: " << getLongestTime() << endl;
 	for(Kernel* k : kernels)
 	{
 		cout << k->getName() << " (Time): " << k->getTime() << " (Area): " << k->getArea() << endl;;	
@@ -495,6 +502,38 @@ int CometPlacer::computeAvgTime()
 	return avg_time; 
 }
 
+int CometPlacer::getAverageTime()
+{
+	int sum_time = 0;
+	for(unsigned int i = 0; i < kernels.size(); i++)
+		sum_time += kernels[i]->getTime();
+
+	return sum_time/kernels.size();
+}
+
+int CometPlacer::getShortestTime()
+{
+	return getShortestKernel()->getTime();
+}
+
+//return pointer to the kernel with the longest execution time
+Kernel* CometPlacer::getShortestKernel()
+{
+	Kernel* k = kernels[0];
+	int shortest_time = k->getTime();
+
+	for(unsigned int i = 1; i < kernels.size(); i++)
+	{
+		if(kernels[i]->getTime() < shortest_time)
+		{
+			k = kernels[i];
+			shortest_time = k->getTime();
+		}
+	}
+
+	return k;
+}
+
 int CometPlacer::getLongestTime()
 {
 	return getLongestKernel()->getTime();
@@ -604,17 +643,23 @@ void CometPlacer::decreaseBlocks()
 //use Slicing_Annealer object to perform Simulated annealing on the kernels
 void CometPlacer::performAnnealing()
 {
-	annealer.setBlocks(kernels);
+	//annealer.setBlocks(kernels);
+	annealer.setHead(head);
 	annealer.initializeOps();
 	annealer.initializeTemp();
+	updateVisual(NOPAUSE);
 
 	while(!annealer.equilibriumReached()) //perform annealing steps until exit criteria is met
 	{
 
 		annealer.performEpoch();
+		//after each epoch, set to best solution found
+		//if(annealer.getEpochCount() % 5 == 0)
+			annealer.resetToBest();
 
 		//after each epoch, fetch kernel data and display status
 		kernels = annealer.getBlocks();
+		//kernels = annealer.getBestBlocks();
 		if(print)
 		{
 			cout << "Kernel count: " << Kernel::getKernelCount() << "\t";
@@ -624,17 +669,19 @@ void CometPlacer::performAnnealing()
 			annealer.printCost();
 			printPercentFilled();
 			printTimestamp();
-		//	printKernels();
-		//	printTimeAndArea();
+			printKernels();
+			//printTimeAndArea();
 		}
-		updateVisual(NOPAUSE, annealer.getEpochCount());
+		//updateVisual(NOPAUSE, annealer.getEpochCount());
+		updateVisual(PAUSE, annealer.getEpochCount());
 	}
 
 	cout << "\n**********\n";
 	cout << "EXIT CRITERIA MET..." << endl;
-	updateVisual(PAUSE);
+	cout << "Displaying best solution..." << endl;
+	annealer.resetToBest();
 	annealer.printResults();
-	cout << "\n****ENDING performAnnealing()****\n";
+	cout << "\n****END performAnnealing()****\n";
 } //performAnnealing()
 
 void CometPlacer::computePossibleKernels()

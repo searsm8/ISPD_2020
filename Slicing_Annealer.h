@@ -29,9 +29,10 @@ private:
 	vector<Block*> blocks;
 	vector<string> ops;	 //string of "h" horizontal cut and
 				//"v" vertical cuts
+	Block* head;
 
 	int wirepenalty;
-	double max_width, max_height; //maximum size restrictions on the block layout
+	double WSE_width, WSE_height; //maximum size restrictions on the block layout
 
 	vector<int> move_weights; //determines how often each type of move is done
 	double reduction_factor; //factor that reduces annealing temperature
@@ -41,6 +42,8 @@ private:
 	Block_Wrapper<Block>* layout;
 	Block_Wrapper<Block>* prev_layout;
 	double prev_cost;
+	double best_cost;
+	double best_wirelen;
 
 	vector<Block*> best_blocks;
 	vector<string> best_ops;
@@ -55,6 +58,7 @@ private:
 	int reject_count;
 	int MIN_TEMP;
 	int epoch_count;
+	int anneal_phase;
 
 public:
 
@@ -63,7 +67,7 @@ public:
 	Slicing_Annealer() {}
 
 	Slicing_Annealer(int init_wirepenalty, int init_width, int init_height) 
-	:wirepenalty(init_wirepenalty), max_width(init_width), max_height(init_height), reduction_factor(.9), steps_per_temp(1000), temp(0), prev_cost(0), move_count(0), prev_move_num(0), reject_count(0), MIN_TEMP(10), epoch_count(0)
+	:wirepenalty(init_wirepenalty), WSE_width(init_width), WSE_height(init_height), reduction_factor(.9), steps_per_temp(10000), temp(0), prev_cost(0),best_cost(-1), move_count(0), prev_move_num(0), reject_count(0), MIN_TEMP(10), epoch_count(0), anneal_phase(0)
 	{
 		move_weights = {70, 20, 10, 0, 0}; //determines how often each type of move is done
 		move_indices = {0, 0, 0, 0, 0}; 
@@ -87,10 +91,11 @@ public:
 	vector<Block*> getBlocks() { return blocks; }
 
 	vector<Block*> getBestBlocks()
-       	{
-	       	return blocks;
+       	{	      
 	       	return best_blocks;
        	}
+
+	int getBestCost() { return best_cost; }
 
 //MODIFIERS
 	
@@ -98,6 +103,24 @@ public:
 	{
 		blocks = new_blocks;
 		//prev_blocks = new_blocks;
+	}
+
+	//set the head block, and update the block order based on connections
+	void setHead(Block* new_head)
+	{
+		head = new_head;
+
+		//order the blocks such that head is first, followed by connected blocks
+		blocks.clear();
+		addToBlocks(head);
+	}
+
+	void addToBlocks(Block* b)
+	{
+		blocks.push_back(b);
+
+		for(unsigned int i = 0; i < b->next_kernels.size(); i++)
+			addToBlocks(b->next_kernels[i]);
 	}
 
 //PRINT FUNCTIONS
@@ -120,7 +143,7 @@ public:
 	void printCost()
 	{
 		if(!print) return;
-		cout << "Prev Cost: " << prev_cost << endl;
+		cout << "Prev Cost: " << prev_cost << "\tBest Cost: " << best_cost << "\tBest Wirelen: " << best_wirelen << endl;
 	}
 
 	void printMoveCount()
@@ -175,7 +198,13 @@ public:
 
 		layout = findBestLayout();
 		prev_layout = layout;
+		
+		resetRejectCount();
+		prev_cost = costFunction();
 
+		temp = 10000;
+		return temp;
+///////
 		int num_initialize_moves = blocks.size()*100;
 
 		printf("Initializing temp...(%d random moves)\n", 2*num_initialize_moves);
@@ -208,7 +237,7 @@ public:
 
 		double std_dev = StandardDeviation(deltas);
 			
-		temp = 3*std_dev; //for a temperature of 30*std_dev,
+		temp = 1*std_dev; //for a temperature of 30*std_dev,
 				//there will be a 90% chance to accept a very bad change of 3*std_dev
 		cout << "\n\n************************\n";
 		cout << "std_dev: " << std_dev << endl;		
@@ -246,13 +275,13 @@ public:
 		//control the temperature schedule
 
 		if(temp < 10000)
-			reduction_factor = .995;
+			reduction_factor = .9825;
 		else if(temp < 50000)
-			reduction_factor = .99;
+			reduction_factor = .975;
 		else if(temp < 100000)
 			reduction_factor = .95;
 		else
-			reduction_factor = .9;
+			reduction_factor = .90;
 
 		temp *= reduction_factor;
 	}
@@ -526,9 +555,10 @@ public:
 #endif
 		//if not an improvement, still make the change,
 		//but count it as a reject for equilibrium measurment
-		if(new_cost >= prev_cost)
-			reject_count++;
-		else accept_count++;
+		//if(new_cost >= prev_cost)
+		//	reject_count++;
+		//else 
+			accept_count++;
 	//	if(prev_move_num == 1)
 	//		return;
 
@@ -537,10 +567,23 @@ public:
 		{
 			prev_blocks[i]->copyDataFrom(blocks[i]);
 			prev_ops[i] = string(ops[i]);
-			best_blocks[i]->copyDataFrom(blocks[i]);
-			best_ops[i] = string(ops[i]);
 		}
 		prev_cost = new_cost;
+
+		//if a new best cost has been found, update blocks and variables
+		if(new_cost < best_cost || best_cost == -1)
+		{
+			best_cost = new_cost;
+			best_wirelen = computeTotalWirelength();
+			updateBest();
+			/*
+			for(unsigned int i = 0; i < blocks.size(); i++)
+			{
+				best_blocks[i]->copyDataFrom(blocks[i]);
+				best_ops[i] = string(ops[i]);
+			}
+			*/
+		}
 		//delete prev_layout; //delete previous layout to prevent memory leak
 		//prev_layout = layout;// new Block_Wrapper<Kernel>(*layout);
 	}
@@ -556,18 +599,85 @@ public:
 		if(prev_move_num == 1)
 		{
 			undoMove1();
-		//	return;
+			return;
 		}
 
-		for(unsigned int i = 0; i < prev_blocks.size(); i++)
+		else
 		{
-			blocks[i]->copyDataFrom(prev_blocks[i]);
-			ops[i] = string(prev_ops[i]);
+			for(unsigned int i = 0; i < prev_blocks.size(); i++)
+			{
+				blocks[i]->copyDataFrom(prev_blocks[i]);
+				ops[i] = string(prev_ops[i]);
+			}
 		}
 
 		delete layout; //delete previous layout to prevent memory leak
 		layout = new Block_Wrapper<Kernel>(*findBestLayout());
 
+	}
+
+	int update_best_count = 0;
+	void updateBest()
+	{
+		update_best_count++;
+		best_blocks.clear();
+
+		for(unsigned int i = 0; i < blocks.size(); i++)
+		{
+			//ops always maintain the same order
+			best_ops[i] = string(ops[i]);
+			best_blocks.push_back(blocks[i]);
+/*
+			//since kernels are swapped around, must match to ID
+			for(unsigned int j = 0; j < best_blocks.size(); j++)
+			{
+				if(blocks[i]->ID == best_blocks[j]->ID)
+				{
+					temp_blocks;
+					//best_blocks[i]= blocks[j]->createCopy();
+					break;
+				}
+			}
+			*/
+		}
+	}
+
+	void resetToBest()
+	{
+		cout << "update_best_count: " << update_best_count << endl;
+		update_best_count = 0;
+
+		blocks.clear();
+		for(unsigned int i = 0; i < best_blocks.size(); i++)
+		{
+			//ops always maintain the same order
+			ops[i] = string(best_ops[i]);
+			blocks.push_back(best_blocks[i]);
+
+			/*
+			//since kernels are swapped around, must match to ID
+			for(unsigned int j = 0; j < best_blocks.size(); j++)
+			{
+				if(blocks[i]->ID == best_blocks[j]->ID)
+				{
+					//make a copy! 
+					blocks[i]->copyDataFrom(best_blocks[j]);
+					//blocks[i] = best_blocks[j]->createCopy();
+					break;
+				}
+			}
+			*/
+		}
+
+		//TODO make sure that updating best blocks works! and doesn't mess up final result
+
+		for(unsigned int i = 0; i < blocks.size(); i++)
+		{
+			cout << blocks[i]->getName() << " " << blocks[i]->ID << " " << ops[i] << endl;
+		}
+			cout << endl;
+		delete layout; //delete previous layout to prevent memory leak
+		layout = new Block_Wrapper<Kernel>(*findBestLayout());
 	}
 
 	//using the ops slicing string, combine blocks until a full layout is achieved
@@ -648,15 +758,15 @@ public:
 		//double alpha = 3.0;
 
 		//compute wire distance cost
-		int wirelen = computeTotalWirelength();;
+		int wirelen = computeTotalWirelength();
 
 		int longest_time = getLongestTime();
 
 //		double cost = longest_time + wirelen*wirepenalty + alpha*layout->getArea();
 		double cost = longest_time + wirelen*wirepenalty;
 		//impose a penalty for shapes that aren't within the allowed area! 
-		cost *= max(1.0, pow(layout->getWidth() / max_width, 3));
-		cost *= max(1.0, pow(layout->getHeight() / max_height, 3));
+		cost *= max(1.0, pow(layout->getWidth() / WSE_width, anneal_phase));
+		cost *= max(1.0, pow(layout->getHeight() / WSE_height, anneal_phase));
 #ifdef DEBUG
 cout << "Wirelength: " << wirelen << "*" << wirepenalty << " = "<< wirelen*wirepenalty << endl;
 cout << "Longest Time: " << longest_time << endl;

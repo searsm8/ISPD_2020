@@ -4,6 +4,10 @@
 //provides utility functions
 #ifndef _util
 #define _util
+//
+//uncomment to disable assert()
+//#define NDEBUG
+#include <cassert>
 
 #include <string>
 #include <vector>

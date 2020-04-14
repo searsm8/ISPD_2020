@@ -30,7 +30,8 @@ public:
 	string type;
 
 	int x, y, rotation, ID;
-	int height, width, time, memory;
+	int width, height, time, memory;
+	int MAX_WIDTH, MAX_HEIGHT;
 	double target_AR; //target Aspect Ratio which the kernel will try to achieve
 		//Aspect Ratio defined as: height/width
 	double target_time;
@@ -53,13 +54,15 @@ public:
 	{
 		x = 0;
 		y = 0;
+		MAX_WIDTH  = 0;
+		MAX_HEIGHT = 0;
 		rotation = 0;
 		ID = kernel_count++;
 		name = "Kernel " + to_string(ID);
 		type = "Kernel";
-		//cout << "Kernel constructor: " << name << " : " << type << endl;
 		target_AR = 1;
 
+		//assign a random color to this kernel
 		for(unsigned int i = 0; i < 3; i++)
 			colors.push_back(rand()%255);
 	}
@@ -98,7 +101,7 @@ public:
 	virtual void printPerformance()
 	{
 		if(!print) return;
-		cout << "Performance metrics for kernel " << ID << ":\t";
+		cout << "Performance metrics for " << getName()  << ":\t";
 		cout << "Height: " << height << "\t";
 		cout << "Width: "  << width  << "\t";
 		cout << "Time: "   << time   << "\t";
@@ -214,8 +217,9 @@ public:
 	{
 //cout << "computePossibleKernels()\n";
 
-	//	vector<double> target_ARs = {0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.2, 1.5, 2, 3, 4, 1}; 
-		vector<double> target_ARs = {0.25, 0.33, 0.5, 0.75, 1}; 
+		vector<double> target_ARs = {0.05, 0.1, 0.2, 0.3, 0.5, 0.75,1}; 
+		//vector<double> target_ARs = {.005, 0.0075, .01, .015, .018, .02, .03, .04, .05, .06, .07, .08, .09, .1, .15, 0.2, .25, .3, .4, .5}; 
+		//vector<double> target_ARs = {1.5, 2, 3, 5, 10, 15, 20,  1}; 
 
 		for( unsigned int i = 0; i < target_ARs.size(); i++)
 		{
@@ -226,8 +230,19 @@ public:
 				possible_kernels.pop_back();
 
 			//if different shape found, add current EPs to possible_EPs
-			if(possible_kernels.size() == 0 || possible_kernels.back()->getWidth() > getWidth())
-				possible_kernels.push_back(createCopy());
+			if(width < MAX_WIDTH && width < MAX_HEIGHT &&
+				height < MAX_WIDTH && height < MAX_HEIGHT)
+			{
+				if(possible_kernels.size() == 0 || possible_kernels.back()->getWidth() > getWidth())
+				{
+					possible_kernels.push_back(createCopy());
+					cout << "ADDING shape for AR: " << target_ARs[i] << " : " << width << "x" << height << endl;
+					break;
+				}
+			else cout << "NO REASON to add shape for AR: " << target_ARs[i]  << " : " << width << "x" << height << endl;
+			}
+			else cout << "UNABLE to add shape for AR: " << target_ARs[i]  << " : " << width << "x" << height << endl;
+
 		}
 
 		//set to first shape
@@ -336,6 +351,7 @@ public:
 
 	virtual void updateXY()
 	{
+		cout << "!!!called updateXY() from kernel class\n";
 	}
 
 	virtual bool setEP(string key, int val)
@@ -375,9 +391,9 @@ public:
 			return changeWidth(false);
 	}
 
-	virtual bool changeWidth(bool increase) { return true; }
+	virtual bool changeWidth(bool increase) { cout << "changeWidth from Kernel class!!!\n"; return true; }
 	
-	virtual bool changeHeight(bool increase) { return true; }
+	virtual bool changeHeight(bool increase) { cout << "changeHeight from Kernel class!!!\n"; return true; }
 	
 //COMPUTATORS
 	int computeHeight() { return -1; }
@@ -470,6 +486,8 @@ public:
 //		x = k->x;
 //		y = k->y;
 //		rotation = k->rotation;
+//
+		//next_kernels = k->next_kernels;
 		target_AR = k->target_AR;
 		FP = k->FP;
 		EP = k->EP;

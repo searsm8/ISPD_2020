@@ -24,8 +24,11 @@ public:
 //	vector<Conv*> convs;
 	static int xblock_count;
 
-	Xblock(map<string, int> formal_params, string X_type)
+	Xblock(map<string, int> formal_params, string X_type, int WSE_width, int WSE_height)
 	{
+		MAX_WIDTH = WSE_width;
+		MAX_HEIGHT = WSE_height;
+
 		unsigned int i = 1; //initial EP value
 		type = X_type;
 		//initialize internal convolutional kernels
@@ -273,8 +276,8 @@ public:
 	void printPerformance()
 	{
 		Kernel::printPerformance();
-		for(unsigned int i = 0; i < convs.size(); i++)
-			convs[i].printPerformance();
+	//	for(unsigned int i = 0; i < convs.size(); i++)
+	//		convs[i].printPerformance();
 	}
 	
 	void printParameters()
@@ -453,10 +456,8 @@ public:
 
 	void copyDataFrom(Kernel* k)
 	{
-	//	cout << "Xblock copyDataFrom()\n";
-	//	Kernel::copyDataFrom(k);
+		Kernel::copyDataFrom(k);
 		this->convs = dynamic_cast<Xblock*>(k)->convs;
-
 	}
 
 

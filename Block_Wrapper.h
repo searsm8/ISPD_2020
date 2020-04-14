@@ -14,12 +14,15 @@
 #define _BLOCK_WRAPPER
 
 #include <algorithm>
+#include "util.h"
 
 using namespace std;
 
 //whatever class is passed as a "Block" must implement functions:
 //getWidth()
 //getHeight()
+extern int WSE_width, WSE_height;
+
 template <class Block>
 class Block_Wrapper
 {
@@ -118,6 +121,11 @@ vector < pair<int, int> > getShapes() { return shapes; }
 		vector<Block*> possible_blocks = base_block->getPossibleKernels();
 
 		shapes.clear();
+
+		//shapes.push_back(pair<int, int>(possible_blocks[possible_blocks.size()-1]->getWidth(), possible_blocks[possible_blocks.size()-1]->getWidth()));
+		//shapes.push_back(pair<int, int>(possible_blocks[0]->getWidth(), possible_blocks[0]->getWidth()));
+		//return;
+			
 		for(unsigned int i = 0; i < possible_blocks.size(); i++)
 			shapes.push_back(pair<int, int>(possible_blocks[i]->getWidth(), possible_blocks[i]->getHeight()));
 

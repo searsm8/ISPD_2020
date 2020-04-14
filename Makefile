@@ -14,3 +14,7 @@ run4:
 	./CometPlacer.out < benchmarks/kgraph4.txt
 run_single:	
 	./CometPlacer.out < benchmarks/single.txt
+runfork:	
+	./CometPlacer.out < benchmarks/fork.txt
+runconv:	
+	./CometPlacer.out < benchmarks/conv.txt
