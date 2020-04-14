@@ -1,0 +1,20 @@
+(*
+test=ConvBlock
+width=633
+height=633
+wdeltat=1
+wlength=1
+wadapter=0
+memlimit=24576
+*)
+ 
+(* Node Definitions *)
+input[0] n=[ 14 14 1024 ]
+conv[1] W=14 H=14 R=1 S=1 C=1024 K=1024 T=1 U=1
+conv[2] W=14 H=14 R=3 S=3 C=1024 K=1024 T=1 U=1
+output[3] n=[ 14 14 1024 ]
+ 
+(* Connectivity *)
+input[0]:_      ->      conv[1]:x, shape:[14][14][1024]
+conv[1]:y       ->      conv[2]:x, shape:[14][14][1024]
+conv[2]:y       ->      output[3]:_, shape:[14][14][1024]
