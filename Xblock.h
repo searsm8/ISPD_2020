@@ -267,6 +267,28 @@ public:
 			increaseEP("c2", 1);
 	}
 
+//MODIFIERS
+
+	//increase (or decrease) the width of the kernel
+	//choose the conv with the longest time
+	bool increaseWidth()
+	{
+		Kernel* longest_conv = getLongestConv();
+		longest_conv->EP["k"]++;
+		computeWidth();
+		return true;
+	}
+
+	//increase (or decrease) the width of the kernel
+	//choose the conv with the shortest time
+	bool decreaseWidth()
+	{
+		Kernel* shortest_conv = getShortestConv();
+		shortest_conv->EP["k"]--;
+		computeWidth();
+		return true;
+	}
+
 //PRINT METHODS
 
 

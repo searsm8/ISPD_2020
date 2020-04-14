@@ -236,7 +236,9 @@ vector < pair<int, int> > getShapes() { return shapes; }
 
 	int getShapeArea(int index)
 	{
-		return shapes[index].first * shapes[index].second;	
+		//apply a weight factor that prefers square shapes to high Aspect Ratios
+		float AR_factor = max(shapes[index].first/shapes[index].second, shapes[index].second/shapes[index].first);
+		return shapes[index].first * shapes[index].second * AR_factor;	
 	}
 
 	//fully realize the shape specified by the index

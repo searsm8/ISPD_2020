@@ -49,6 +49,8 @@ private:
 	vector<int> previous_ops_count;
 	vector< vector<int> > next_block_indices;
 
+	Block* head;
+
 	int move_count;
 	vector<int> move_indices; //track the index that each move is performed at
 	int prev_move_num;
@@ -140,6 +142,31 @@ public:
 
 //ANNEALING FUNCTIONS
 
+	void setHead(Block* h)
+	{
+		head = h;
+	}
+
+	//sort the order of the blocks based on data flow 
+	void sortBlocks()
+	{
+		if(head == NULL)
+		{
+			cout << "Head block not set! Cannot sort blocks..." << endl;
+			return;
+		}
+
+		blocks.clear();
+		addBlock(head);
+	}
+
+	void addBlock(Block* b)
+	{
+		blocks.push_back(b);
+		for(unsigned int i = 0; i < b->next_kernels.size(); i++)
+			addBlock(b->next_kernels[i]);
+	}
+
 	//initial op strings can be all random, or uniform
 	void initializeOps()
 	{
@@ -150,8 +177,8 @@ public:
 
 		while(previous_ops_count.size() < ops.size())
 			previous_ops_count.push_back(0);
-//cout << "blocks.size() = " << blocks.size() << endl;
-//cout << "ops.size() = " << ops.size() << endl;
+
+		sortBlocks();
 			
 		for(unsigned int i = 0; i < blocks.size(); i++)
 		{
@@ -177,6 +204,10 @@ public:
 		prev_layout = layout;
 
 		int num_initialize_moves = blocks.size()*100;
+
+		temp = 10000;
+		return 10000;
+	/////
 
 		printf("Initializing temp...(%d random moves)\n", 2*num_initialize_moves);
 		vector <double> deltas;
@@ -721,6 +752,7 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 	//when no new moves have been accepted for many moves
 	bool equilibriumReached()
 	{
+		return false;
 		cout << "reject_count: " << reject_count << "\taccept_count: " << accept_count << "\tsteps_per_temp: " << steps_per_temp << endl;
 		//consider equilibrium reached if at least 99% of moves are rejected
 		if(reject_count >= steps_per_temp*0.99)

@@ -210,12 +210,26 @@ public:
 	void setTargetTime(double new_time) { target_time = new_time; }
 
 	//fill in possible_kernels
+	void computePossibleKernelsNEW()
+	{
+		//increase width to widest allowed
+
+		//increase height until min memory requirement met
+		//and Time is < targetTime
+		//
+		//change the shape until it becomes a square
+		//for each new shape, decrease the width 3x?
+		//then increase height to maintain computation Time
+
+	}
+	
+	//fill in possible_kernels
 	void computePossibleKernels()
 	{
 //cout << "computePossibleKernels()\n";
 
-	//	vector<double> target_ARs = {0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.2, 1.5, 2, 3, 4, 1}; 
-		vector<double> target_ARs = {0.25, 0.33, 0.5, 0.75, 1}; 
+		vector<double> target_ARs = {0.025,0.035,0.045,0.055, 0.1, 0.2, 0.3, 0.5, 0.75, 1.2, 1.5, 2, 3, 4, 1}; 
+	//	vector<double> target_ARs = {0.25, 0.33, 0.5, 0.75, 1}; 
 
 		for( unsigned int i = 0; i < target_ARs.size(); i++)
 		{
@@ -226,7 +240,7 @@ public:
 				possible_kernels.pop_back();
 
 			//if different shape found, add current EPs to possible_EPs
-			if(possible_kernels.size() == 0 || possible_kernels.back()->getWidth() > getWidth())
+			if(getWidth() < 2*WSE_width && (possible_kernels.size() == 0 || possible_kernels.back()->getWidth() > getWidth()))
 				possible_kernels.push_back(createCopy());
 		}
 
@@ -353,7 +367,57 @@ public:
 	{
 		return false;
 	}
-	//
+
+	//increase (or decrease) the width of the kernel
+	virtual bool increaseWidth()
+	{
+		EP["k"]++;
+		computeWidth();
+		return true;
+	}
+
+	virtual bool decreaseWidth()
+	{
+		EP["k"]--;
+		computeWidth();
+		return true;
+	}
+
+	//increase (or decrease) the height of the kernel
+	//choose the smallest parameter that affects height
+	virtual bool increaseHeight()
+	{
+		string EP_to_increase;
+		if(EP["h"] <= EP["w"] &&	EP["h"] <= EP["c"]) 
+			EP_to_increase = "h";
+		else if(EP["w"] <= EP["h"] && EP["w"] <= EP["c"]) 
+			EP_to_increase = "w";
+		else if(EP["c"] <= EP["w"] && EP["c"] <= EP["h"]) 
+			EP_to_increase = "c";
+
+		EP[EP_to_increase]++;
+		computeHeight();
+	
+		return true;
+	}
+
+	//choose the largest parameter that affects height
+	virtual bool decreaseHeight()
+	{
+		string EP_to_decrease;
+		if(EP["h"] >= EP["w"] && EP["h"] >= EP["c"]) 
+			EP_to_decrease = "h";
+		else if(EP["w"] >= EP["h"] && EP["w"] >= EP["c"]) 
+			EP_to_decrease = "w";
+		else if(EP["c"] >= EP["w"] && EP["c"] >= EP["h"]) 
+			EP_to_decrease = "c";
+
+		EP[EP_to_decrease]--;
+		computeHeight();
+	
+		return true;
+	}
+
 	//increase the size of the kernel based on the target AR
 	//returns true if an increase was made
 	virtual bool increaseSize()

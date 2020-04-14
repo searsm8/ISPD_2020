@@ -15,6 +15,8 @@ using namespace std;
 	bool print = true; //set false to surpress printing info
 
 int MAX_ALLOWED_MEMORY = 48000/2; //for a single core on the WSE
+int WSE_width = 633;
+int WSE_height= 633;
 
 //CONSTANTS
 	int VISUAL_UPDATE_INTERVAL = 10000; //how often the visualization gets updated

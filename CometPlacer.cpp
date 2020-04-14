@@ -5,7 +5,7 @@
 //if VISUALIZE is defined, then the SDL libraryi will be used to create a visualization
 //if SDL is not installed, comment this #define
 //
-//#define VISUALIZE
+#define VISUALIZE
 
 //DEBUG controls print statements
 //
@@ -16,6 +16,7 @@
 #endif
 
 #include "CometPlacer.h"
+#include "util.h"
 
 //uncomment to disable assert()
 //#define NDEBUG
@@ -605,6 +606,7 @@ void CometPlacer::decreaseBlocks()
 void CometPlacer::performAnnealing()
 {
 	annealer.setBlocks(kernels);
+	annealer.setHead(head);
 	annealer.initializeOps();
 	annealer.initializeTemp();
 
@@ -627,7 +629,7 @@ void CometPlacer::performAnnealing()
 		//	printKernels();
 		//	printTimeAndArea();
 		}
-		updateVisual(NOPAUSE, annealer.getEpochCount());
+		updateVisual(PAUSE, annealer.getEpochCount());
 	}
 
 	cout << "\n**********\n";
@@ -673,8 +675,6 @@ int main(int argc, char** argv)
 	//runtime arguments, and defaults
 	int wirepenalty = 100;
 	int timelimit = 3600;
-	int width = 633;
-	int height = 633;
 
 	//read the runtime arguments
 	for(int i = 1; i < argc; i++)
@@ -692,14 +692,14 @@ int main(int argc, char** argv)
 			if(input[0] == "timelimit")
 				timelimit= stoi(input[1]);
 			if(input[0] == "width")
-				width = stoi(input[1]);
+				WSE_width = stoi(input[1]);
 			if(input[0] == "height")
-				height = stoi(input[1]);
+				WSE_height = stoi(input[1]);
 		}
 	}
 
 
-	CometPlacer placer = CometPlacer(kgraph_filepath, output_filepath, wirepenalty, timelimit, width, height);
+	CometPlacer placer = CometPlacer(kgraph_filepath, output_filepath, wirepenalty, timelimit, WSE_width, WSE_height);
 
 	//placer.printInfo();
 	placer.updateVisual();
