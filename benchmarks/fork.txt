@@ -1,0 +1,25 @@
+(*
+test=Fork
+width=633
+height=633
+wdeltat=1
+wlength=1
+wadapter=0
+memlimit=24576
+*)
+ 
+(* Node Definitions *)
+input[ 0] n=[14 14 1024]
+dblock[ 1] f=1024 h=14 w=14
+dblock[ 2] f=1024 h=14 w=14
+dblock[ 3] f=1024 h=14 w=14
+dblock[ 4] f=1024 h=14 w=14
+output[ 5] n=[14 14 1024]
+ 
+(* Connectivity *)
+input[ 0]:_    -> dblock[ 1]:x, shape:[14][14][1024]
+dblock[ 1]:y    -> dblock[ 2]:x, shape:[14][14][1024]
+dblock[ 1]:y    -> dblock[ 3]:x, shape:[14][14][1024]
+dblock[ 2]:y    -> dblock[ 4]:x, shape:[14][14][1024]
+dblock[ 3]:y    -> dblock[ 4]:x, shape:[14][14][1024]
+dblock[ 4]:y    -> output[ 5]:_, shape:[14][14][1024]
