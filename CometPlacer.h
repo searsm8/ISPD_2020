@@ -95,9 +95,12 @@ public:
 	int computeAvgTime();
 	
 	int getLongestTime();
+	int getShortestTime();
+	int getAverageTime();
 	
 	//return pointer to the kernel with the longest execution time
 	Kernel* getLongestKernel();
+	Kernel* getShortestKernel();
 	
 	void increaseAllEP(string key, int increment=1);
 	

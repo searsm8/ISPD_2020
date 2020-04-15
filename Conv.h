@@ -35,8 +35,10 @@ public:
 	}
 
 
-	Conv(map<string, int> formal_params)
+	Conv(map<string, int> formal_params, int WSE_width, int WSE_height)
 	{
+		MAX_WIDTH = WSE_width;
+		MAX_HEIGHT = WSE_height;
 		unsigned int i = 1; //initial EP value
 		
 		//initialize formal parameters

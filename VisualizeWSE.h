@@ -17,8 +17,8 @@ SDL_Window* createWSE(int WSE_width=633, int WSE_height=633)
     (
         "WSE Visualization", SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
-        WSE_width,
-        WSE_height,
+        1.5*WSE_width,
+        1.5*WSE_height,
         SDL_WINDOW_SHOWN
     );
 
@@ -52,9 +52,17 @@ void drawBackground(SDL_Window* window)
 
     //Render background rect
     //blue background
-    SDL_SetRenderDrawColor( renderer, 0, 0, 255, 155 );
+    SDL_SetRenderDrawColor( renderer, 0, 0, 0, 0 );
     SDL_RenderFillRect( renderer, &b );
     
+    //draw the WSE legal edge
+    SDL_Rect e;
+    e.x = 0;
+    e.y = 0;
+    e.w = 633;
+    e.h = 633;
+    SDL_SetRenderDrawColor( renderer, 0,0,255,155);
+    SDL_RenderFillRect( renderer, &e );
 }
 
 void drawRect(SDL_Renderer* renderer, vector<int> rect, vector<int> colors)

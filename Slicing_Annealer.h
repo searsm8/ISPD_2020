@@ -202,8 +202,7 @@ public:
 		resetRejectCount();
 		prev_cost = costFunction();
 
-		temp = 10000;
-		return temp;
+		temp = 10000;	return temp;
 ///////
 		int num_initialize_moves = blocks.size()*100;
 

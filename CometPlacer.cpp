@@ -2,7 +2,7 @@
 //author: Mark Sears
 //Primary driver for Wafer Space Enginer placer
 //
-//if VISUALIZE is defined, then the SDL libraryi will be used to create a visualization
+//if VISUALIZE is defined, then the SDL library will be used to create a visualization
 //if SDL is not installed, comment this #define
 //
 #define VISUALIZE
@@ -16,10 +16,6 @@
 #endif
 
 #include "CometPlacer.h"
-
-//uncomment to disable assert()
-//#define NDEBUG
-#include <cassert>
 
 //GLOBAL VARIABLES
 //
@@ -147,15 +143,15 @@ void CometPlacer::readNode(string line)
 	Kernel* new_kernel = NULL;
 	if((signed int)elements[0].find("dblock") != -1)
 	{
-		new_kernel = new Xblock(formal_params, "dblock", WSE_width, WSE_height);
+		new_kernel = new Xblock(formal_params, "dblock", width, height);
 	}
 	else if((signed int)elements[0].find("cblock") != -1)
 	{
-		new_kernel = new Xblock(formal_params, "cblock", WSE_width, WSE_height);
+		new_kernel = new Xblock(formal_params, "cblock", width, height);
 	}
 	else if((signed int)elements[0].find("conv") != -1)
 	{
-		new_kernel = new Conv(formal_params, WSE_width, WSE_height);
+		new_kernel = new Conv(formal_params, width, height);
 	}
 
 	assert(new_kernel != NULL);
@@ -222,7 +218,7 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 {
 	char c_line[1000];
 	string line, prev_line;
-	int mode = 0; //indicates what is being read
+	int mode = 1; //indicates what is being read
 	while( true )
 	{
 		//if( feof(kgraph_file)) cout << "feof!" << " size: " << kernels.size() << "\n";
@@ -275,7 +271,7 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 void CometPlacer::printPercentFilled()
 {
 	double filled_percent = (double)(computeTotalKernelArea()) / (double)(getWaferArea()); 
-	cout << "Kernels fill " << filled_percent << "% of wafer." << endl;
+	cout << "Kernels fill " << 100*filled_percent << "% of wafer." << endl;
 }
 
 //fix Kernel names so they match expected output format e.g. "k03"
@@ -672,8 +668,8 @@ void CometPlacer::performAnnealing()
 			printKernels();
 			//printTimeAndArea();
 		}
-		//updateVisual(NOPAUSE, annealer.getEpochCount());
-		updateVisual(PAUSE, annealer.getEpochCount());
+		updateVisual(NOPAUSE, annealer.getEpochCount());
+		//updateVisual(PAUSE, annealer.getEpochCount());
 	}
 
 	cout << "\n**********\n";

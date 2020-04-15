@@ -244,7 +244,11 @@ vector < pair<int, int> > getShapes() { return shapes; }
 
 	int getShapeArea(int index)
 	{
-		return shapes[index].first * shapes[index].second;	
+		int area = shapes[index].first * shapes[index].second;	
+		//add a factor that penalizes large or small aspect ratios
+		double penalty = max((double)shapes[index].first/shapes[index].second, (double)shapes[index].second/shapes[index].first);
+//		cout << "penalty = " << penalty << endl;
+		return area * pow(penalty, 3);
 	}
 
 	//fully realize the shape specified by the index
