@@ -53,6 +53,11 @@ public:
 			convs.push_back(Conv(H/2,W/2, 1,1,F/4, F,   1, i, i, i, i));
 			convs.push_back(Conv(H, W, 1, 1,  F/2, F,   2, i, i, i, i));
 		}
+
+		if(type == "conv")
+		{
+			convs.push_back(Conv(H, W, formal_params["R"], formal_params["S"], formal_params["C"], formal_params["K"], formal_params["T"], i, i, i, i));
+		}
 		
 		//initialize formal parameters
 		FP = formal_params;

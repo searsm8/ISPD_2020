@@ -187,12 +187,12 @@ public:
 
 		if(increase && orig_EP >= my_FP)
 		{
-			cout << getName() << ": " << "No increase possible for EP: " << EP_key << endl;
+//			cout << getName() << ": " << "No increase possible for EP: " << EP_key << endl;
 			return orig_EP;
 		}
 		if(!increase && orig_EP <= 1)
 		{
-			cout << getName() << ": " << "No decrease possible for EP: " << EP_key << endl;
+//			cout << getName() << ": " << "No decrease possible for EP: " << EP_key << endl;
 			return orig_EP;
 		}
 		

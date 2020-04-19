@@ -16,6 +16,7 @@
 #endif
 
 #include "CometPlacer.h"
+#include <chrono>
 
 //GLOBAL VARIABLES
 //
@@ -26,8 +27,7 @@
 unsigned long start_time = std::clock();
 unsigned long timestamp = std::clock();
 unsigned long time_ref = std::clock();
-
-int WSE_width, WSE_height;
+auto start = chrono::steady_clock::now();
 
 	//CONSTRUCTORS
 CometPlacer::CometPlacer()
@@ -80,13 +80,22 @@ cout << kernels[i]->getName() << "  AR: " << new_AR << endl;
 
 void CometPlacer::readParameter(string line)
 {
+#ifdef DEBUG
+cout << "Begin readParameter()" << endl;;
+#endif
 	vector<string> elements = split(line, "=");
 	if(elements.size() == 0) return; //blank line!
 
 	if((signed int)elements[0].find("width") != -1)
+	{
 		width = stoi(elements[1]);
+		WSE_width = width;
+	}
 	else if((signed int)elements[0].find("height") != -1)
+	{
 		height = stoi(elements[1]);
+		WSE_height = height;
+	}
 	else if((signed int)elements[0].find("wlength") != -1)
 		wirepenalty = stoi(elements[1]);
 	else if((signed int)elements[0].find("memlimit") != -1)
@@ -96,6 +105,9 @@ void CometPlacer::readParameter(string line)
 
 void CometPlacer::readNode(string line)
 {
+#ifdef DEBUG
+cout << "Begin readNode()" << endl;;
+#endif
 	//cout << "readNode()\nline: " << line << endl;
 	vector<string> elements = split(line, " ");
 	if(elements.size() == 0) return; //blank line!
@@ -115,28 +127,22 @@ void CometPlacer::readNode(string line)
 		return;
 
 	//for other kernels, create the appropriate object
-		//int F=0, H=0, W=0, T=0;
 		map<string, int> formal_params;
+		string kernel_name;
 		//read in all the Formal Parameters
 		for(unsigned int i = 1; i < elements.size(); i++)
 		{
 			vector<string> next_FP = split(elements[i], "=");
 
+			if(next_FP[0] == "name")
+			{
+				kernel_name = next_FP[1];
+				continue;
+			}
+
 			next_FP[0] = toupper((char &)next_FP[0][0]);
 
 			formal_params[next_FP[0]] = stoi(next_FP[1]);
-
-			/*
-
-			if(next_FP[0] == "f")
-				formal_params["F"] = stoi(next_FP[1]);
-			else if(next_FP[0] == "h")
-				formal_params["H"] = stoi(next_FP[1]);
-			else if(next_FP[0] == "w")
-				formal_params["W"] = stoi(next_FP[1]);
-			else if(next_FP[0] == "t")
-				formal_params["T"] = stoi(next_FP[1]);
-			*/
 		}
 
 	//unsigned int i = 1;
@@ -151,7 +157,8 @@ void CometPlacer::readNode(string line)
 	}
 	else if((signed int)elements[0].find("conv") != -1)
 	{
-		new_kernel = new Conv(formal_params, width, height);
+		//new_kernel = new Conv(formal_params, width, height);
+		new_kernel = new Xblock(formal_params, "conv", width, height);
 	}
 
 	assert(new_kernel != NULL);
@@ -163,8 +170,13 @@ void CometPlacer::readNode(string line)
 
 void CometPlacer::readConnection(string line)
 {
-//	cout << "readConnection()\nline: " << line << endl;
-	vector<string> elements = split(line, " ");
+#ifdef DEBUG
+cout << "Begin readConnection()" << endl;;
+#endif
+	string delimiter = " ";
+	if(line.find("\t") != string::npos)
+		delimiter = "\t";
+	vector<string> elements = split(line, delimiter);
 	if(elements.size() == 0) return; //blank line!
 
 	//handle the case of "dblock[ 1]"
@@ -177,8 +189,16 @@ void CometPlacer::readConnection(string line)
 		}
 	}
 
+#ifdef DEBUG
+cout << "elements[0]: " << elements[0]<< endl;
+cout << "elements[2]: " << elements[2]<< endl;
+#endif
 	string name1 = split(elements[0], ":")[0];
 	string name2 = split(elements[2], ":")[0];
+#ifdef DEBUG
+cout << "name1: " << name1 << endl;;
+cout << "name2: " << name2 << endl;;
+#endif
 
 	//ignore the shape in elements[3], for now
 	//
@@ -216,6 +236,9 @@ void CometPlacer::readConnection(string line)
 
 void CometPlacer::readKgraph(string kgraph_filepath)
 {
+#ifdef DEBUG
+cout << "Begin readKgraph()" <<endl;
+#endif
 	char c_line[1000];
 	string line, prev_line;
 	int mode = 1; //indicates what is being read
@@ -263,6 +286,9 @@ void CometPlacer::readKgraph(string kgraph_filepath)
 				break;
 		}
 	} //end file input
+#ifdef DEBUG
+cout << "End readKgraph()" <<endl;
+#endif
 }
 
 //PRINT METHODS
@@ -285,6 +311,7 @@ void CometPlacer::fixName(Kernel* k, int ID)
 	k->setName(new_name);
 }
 
+vector<Kernel*> printed_kernels;
 //print the current best solution to file
 //specifying block placements and parameters
 void CometPlacer::printOutputToFile(string output_filepath)
@@ -301,11 +328,13 @@ void CometPlacer::printOutputToFile(string output_filepath)
 
 	//print the kernels in the order from input to ouput
 	//start with HEAD, call recursively
+	printed_kernels.clear();
 	printKernelToFile(head, output_file);
 
 	//print last line
 	output_file << "kmap = union( ";	
 	cout << "kmap = union( ";	
+	printed_kernels.clear();
 	printUnion(head, output_file);
 	output_file << ")\n";
 	cout << ")\n";
@@ -318,8 +347,10 @@ void CometPlacer::printUnion(Kernel* k, ofstream& output_file)
 
 	//call recursively to all kernels that this kernel points to
 	vector<Kernel*> next_kernels = k->getNextKernels();
+	printed_kernels.push_back(k);
 
 	for(unsigned int i = 0; i < next_kernels.size(); i++)
+		if(find(printed_kernels.begin(), printed_kernels.end(), next_kernels[i]) == printed_kernels.end())
 		printUnion(next_kernels[i], output_file);
 }
 
@@ -343,10 +374,13 @@ void CometPlacer::printKernelToFile(Kernel* k, ofstream& output_file)
 	output_file << k->getName() << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
 	cout << k->getName() << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
 
+	printed_kernels.push_back(k);
+
 	//call recursively to all kernels that this kernel points to
 	vector<Kernel*> next_kernels = k->getNextKernels();
 
 	for(unsigned int i = 0; i < next_kernels.size(); i++)
+		if(find(printed_kernels.begin(), printed_kernels.end(), next_kernels[i]) == printed_kernels.end())
 		printKernelToFile(next_kernels[i], output_file);
 } //end printKernelToFile()
 
@@ -370,9 +404,10 @@ void CometPlacer::printKernels()
 	cout << "Longest Time: " << getLongestTime() << endl;
 	cout << "Shortest Time: " << getShortestTime() << endl;
 	cout << "Average Time: " << getAverageTime() << endl;
+
 	for(Kernel* k : kernels)
 	{
-		k->printPerformance();
+	//	k->printPerformance();
 	}
 }
 
@@ -649,13 +684,22 @@ void CometPlacer::performAnnealing()
 	{
 
 		annealer.performEpoch();
+		/*
 		//after each epoch, set to best solution found
-		//if(annealer.getEpochCount() % 5 == 0)
-			annealer.resetToBest();
+		if(annealer.getEpochCount() % 5 == 0)
+		{
+			if(!annealer.resetToBest())
+			{
+				cout << "No better solutions found in 5 epochs! Reset to best...\n";
+			}
+		}
+		else
+		{
+		//	annealer.resetToBest();
+		}
+		*/
 
-		//after each epoch, fetch kernel data and display status
-		kernels = annealer.getBlocks();
-		//kernels = annealer.getBestBlocks();
+		//after each epoch, display status
 		if(print)
 		{
 			cout << "Kernel count: " << Kernel::getKernelCount() << "\t";
@@ -672,6 +716,8 @@ void CometPlacer::performAnnealing()
 		//updateVisual(PAUSE, annealer.getEpochCount());
 	}
 
+	//kernels = annealer.getBlocks();
+	kernels = annealer.getBestBlocks();
 	cout << "\n**********\n";
 	cout << "EXIT CRITERIA MET..." << endl;
 	cout << "Displaying best solution..." << endl;
@@ -702,6 +748,9 @@ void CometPlacer::printTimestamp()
 		
 	printf("TIME ELAPSED: %.02fs (%.01fm)\t(%.02fs since previous)\n", total_time_elapsed, total_time_elapsed/60, time_since_previous);
 	
+	auto stop = chrono::steady_clock::now(); 
+	auto duration = chrono::duration_cast<chrono::seconds>(stop - start);
+	cout << "chrono duration: " << duration.count() << "s" << endl; 
 	timestamp = clock();
 }
 
@@ -755,7 +804,7 @@ int main(int argc, char** argv)
 	placer.enforceMemoryConstraint();
 //	placer.printKernels();
 //	placer.printTimeAndArea();
-	placer.updateVisual(NOPAUSE); 
+//	placer.updateVisual(NOPAUSE); 
 
 	placer.performAnnealing();
 	//placer.updateVisual(true); 

@@ -215,15 +215,18 @@ public:
 	//fill in possible_kernels
 	void computePossibleKernels()
 	{
-//cout << "computePossibleKernels()\n";
 
 		vector<double> target_ARs = {0.035, 0.04, 0.045, 0.05, 0.06, 0.07, 0.08, 0.1, 0.2, 0.3, 0.5, 0.75,1}; 
 		//vector<double> target_ARs = {.005, 0.0075, .01, .015, .018, .02, .03, .04, .05, .06, .07, .08, .09, .1, .15, 0.2, .25, .3, .4, .5}; 
 		//vector<double> target_ARs = {1.5, 2, 3, 5, 10, 15, 20,  1}; 
 
-		for( unsigned int i = 0; i < target_ARs.size(); i++)
+		//for( unsigned int i = 0; i < target_ARs.size(); i++)
+		int num_shapes = 50;
+		double target_AR = 0.01;
+		for( int i = 0; i < num_shapes; i++)
 		{
-			changeShapeToAR(target_ARs[i]);
+			target_AR *= 1.1;
+			changeShapeToAR(target_AR);
 		
 			//if same height as previous, remove previous
 			if(possible_kernels.size() > 0 && possible_kernels.back()->getHeight() >= getHeight())
@@ -235,12 +238,13 @@ public:
 			{
 				if(possible_kernels.size() == 0 || possible_kernels.back()->getWidth() > getWidth())
 				{
+			//		cout << getName() << ": ADDING shape for AR: " << target_AR << " : " << width << "x" << height << endl;
 					possible_kernels.push_back(createCopy());
-					cout << getName() << ": ADDING shape for AR: " << target_ARs[i] << " : " << width << "x" << height << endl;
+				//	break; //add only one shape, then break
 				}
-			else cout << getName() <<  ": NO REASON to add shape for AR: " << target_ARs[i]  << " : " << width << "x" << height << endl;
+			//	else cout << getName() <<  ": NO REASON to add shape for AR: " << target_AR  << " : " << width << "x" << height << endl;
 			}
-			else cout << getName() << ": UNABLE to add shape for AR: " << target_ARs[i]  << " : " << width << "x" << height << "\tMAX_WIDTH: " << MAX_WIDTH << "\tMAX_HEIGHT: " << MAX_HEIGHT << endl;
+			//else cout << getName() << ": UNABLE to add shape for AR: " << target_AR << " : " << width << "x" << height << "\tMAX_WIDTH: " << MAX_WIDTH << "\tMAX_HEIGHT: " << MAX_HEIGHT << endl;
 
 		}
 

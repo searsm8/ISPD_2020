@@ -37,7 +37,7 @@ private:
 	vector<int> move_weights; //determines how often each type of move is done
 	double reduction_factor; //factor that reduces annealing temperature
 	int steps_per_temp; //number of steps before reducing temperature
-	double temp; 	//current annealing temperature
+	double temp, start_temp; 	//current annealing temperature
 
 	Block_Wrapper<Block>* layout;
 	Block_Wrapper<Block>* prev_layout;
@@ -54,6 +54,7 @@ private:
 
 	int move_count;
 	vector<int> move_indices; //track the index that each move is performed at
+	int m4_target_index;
 	int prev_move_num;
 	int reject_count;
 	int MIN_TEMP;
@@ -67,9 +68,9 @@ public:
 	Slicing_Annealer() {}
 
 	Slicing_Annealer(int init_wirepenalty, int init_width, int init_height) 
-	:wirepenalty(init_wirepenalty), WSE_width(init_width), WSE_height(init_height), reduction_factor(.9), steps_per_temp(10000), temp(0), prev_cost(0),best_cost(-1), move_count(0), prev_move_num(0), reject_count(0), MIN_TEMP(10), epoch_count(0), anneal_phase(0)
+	:wirepenalty(init_wirepenalty), WSE_width(init_width), WSE_height(init_height), reduction_factor(.9), steps_per_temp(1000), temp(0), prev_cost(0),best_cost(-1), move_count(0), prev_move_num(0), reject_count(0), MIN_TEMP(10), epoch_count(0), anneal_phase(0)
 	{
-		move_weights = {70, 20, 10, 0, 0}; //determines how often each type of move is done
+		move_weights = {70, 20, 10, 10, 0}; //determines how often each type of move is done
 		move_indices = {0, 0, 0, 0, 0}; 
 	}
 
@@ -120,7 +121,17 @@ public:
 		blocks.push_back(b);
 
 		for(unsigned int i = 0; i < b->next_kernels.size(); i++)
-			addToBlocks(b->next_kernels[i]);
+			if(!alreadyInList(b->next_kernels[i]))
+				addToBlocks(b->next_kernels[i]);
+	}
+
+	bool alreadyInList(Block* b)
+	{
+		for(unsigned int i = 0; i < blocks.size(); i++)
+			if(b == blocks[i])
+				return true; //block found! it is already in the list
+		//otherwise, block not found in list
+		return false;
 	}
 
 //PRINT FUNCTIONS
@@ -137,7 +148,7 @@ public:
 	void printTemp()
 	{
 		if(!print) return;
-		cout << "Temp: " << temp << "\treduction_factor: " << reduction_factor << endl;
+		cout << "Temp: " << temp << "\treduction_factor: " << reduction_factor << "\tanneal_phase: " << anneal_phase << endl;
 	}
 
 	void printCost()
@@ -169,7 +180,7 @@ public:
 		ops.push_back(""); //first op must always be empty
 
 		for(unsigned int i = 1; i < blocks.size(); i++)
-			ops.push_back("h");
+			ops.push_back("v");
 
 		while(previous_ops_count.size() < ops.size())
 			previous_ops_count.push_back(0);
@@ -193,6 +204,7 @@ public:
 	//set starting temperature equal to 30*std_dev
 	float initializeTemp()
 	{
+	cout << "initializeTemp()" << endl;
 		for(unsigned int i = 0; i < blocks.size(); i++)
 			blocks[i]->computePossibleKernels();
 
@@ -201,10 +213,15 @@ public:
 		
 		resetRejectCount();
 		prev_cost = costFunction();
-
-		temp = 10000;	return temp;
+		//initiate best cost to to initial placement
+		best_cost = prev_cost;
+		best_wirelen = computeTotalWirelength();
+		updateBest();
+	
+	//	temp = 10000;	return temp;
 ///////
 		int num_initialize_moves = blocks.size()*100;
+		steps_per_temp = max(5000, (int)(blocks.size()*50));
 
 		printf("Initializing temp...(%d random moves)\n", 2*num_initialize_moves);
 		vector <double> deltas;
@@ -236,8 +253,9 @@ public:
 
 		double std_dev = StandardDeviation(deltas);
 			
-		temp = 1*std_dev; //for a temperature of 30*std_dev,
+		temp = 0.2*std_dev; //for a temperature of 30*std_dev,
 				//there will be a 90% chance to accept a very bad change of 3*std_dev
+		start_temp = temp;
 		cout << "\n\n************************\n";
 		cout << "std_dev: " << std_dev << endl;		
 		cout << "Starting Temp: " << temp << endl;
@@ -245,6 +263,7 @@ public:
 		
 		prev_cost = costFunction();
 		resetRejectCount();
+		resetToBest();
 
 		return temp;
 	}
@@ -273,20 +292,30 @@ public:
 	{
 		//control the temperature schedule
 
-		if(temp < 10000)
+		if(temp < start_temp/1000)
+		{
+			anneal_phase = 4;
 			reduction_factor = .9825;
-		else if(temp < 50000)
+		}
+		else if(temp < start_temp/100)
+		{
+			anneal_phase = 3;
 			reduction_factor = .975;
-		else if(temp < 100000)
+		}
+		else if(temp < start_temp/10)
+		{
+			anneal_phase = 2;
 			reduction_factor = .95;
+		}
 		else
+		{
+			anneal_phase = 1;
 			reduction_factor = .90;
+		}
 
 		temp *= reduction_factor;
 	}
 	
-	//TODO add more moves!
-	//move4() change a larger block orientation (how???)
 	void performMove()
 	{	
 		prev_move_num = 0;
@@ -347,6 +376,13 @@ public:
 		blocks[move_indices[1]+1] = temp;
 	}
 
+	void undoMove4()
+	{
+		Block* temp = blocks[move_indices[4]];
+		blocks[move_indices[4]] = blocks[m4_target_index];
+		blocks[m4_target_index] = temp;
+	}
+
 	//move M2
 	//complements a random operator chain
 	void move2()
@@ -355,9 +391,9 @@ public:
 		cout << "move2()" << endl;
 #endif
 		//choose a random op string until a non-empty one is found
-		unsigned int i = rand() % (ops.size()-1);
+		unsigned int i = rand() % (ops.size());
 		while(ops[i].size() == 0)
-			i = rand() % (ops.size()-1);
+			i = rand() % (ops.size());
 	
 		//complement the h's and v's in the string
 		string complement = "";
@@ -388,9 +424,9 @@ public:
 		while(attempts++ < (signed int)ops.size()) //try this many times, then give up and cancel move
 		{
 			//choose a random op string until a non-empty one is found
-			int i = rand() % (ops.size()-1);
+			int i = rand() % (ops.size());
 			while(ops[i].size() == 0)
-				i = rand() % (ops.size()-1);				
+				i = rand() % (ops.size());				
 			
 			//choose direction to bump operation: forward or backward
 			
@@ -418,65 +454,28 @@ public:
 		return;
 	} //end move3
 
-	//increase or decrease kernel size!
+	//allow for a "big" jump!
 	void move4()
 	{
 #ifdef DEBUG
 		cout << "move4()" << endl;
 #endif
-		//if(computeTotalWirelength() * wirepenalty < getLongestTime())
-		if(rand()%2 == 0)
-//		if(true)
-		{
-//			Block* b = getLongestBlock();
-			for(unsigned int i = 0; i < blocks.size(); i++)
-			{
-				Block* b = getLongestBlock();
-#ifdef DEBUG
-	cout << "Increasing Block: " << b->getName() << endl;
-#endif
-				b->printPerformance();
-				b->increaseSize();
-				b->computePerformance();
-				b->printPerformance();
-				b->printParameters();
-			}
-		}
-		else
-		{
-			//decrease size of a random block
-		//	Block* b = blocks[rand()%blocks.size()];
-			for(unsigned int i = 0; i < blocks.size(); i++)
-			{
-				Block* b = getShortestBlock();
-				b->decreaseSize();
-				b->computePerformance();
-			}
-			return;
-		}
+
+		move_indices[4] = rand() % (blocks.size()-1);
+		m4_target_index = rand() % (blocks.size()-1);
+		prev_move_num = 4;
+	
+		Block* temp = blocks[move_indices[4]];
+		blocks[move_indices[4]] = blocks[m4_target_index];
+		blocks[m4_target_index] = temp;
 	} //end move4()
 
-	//give a block a new random AR and orientation
 	void move5()
 	{
 #ifdef DEBUG
 		cout << "move5()" << endl;
 #endif
-		random_device rd("default");
-		mt19937 gen{rd()};
-		
-		double mean = 1.5, std_dev = .3;
-		normal_distribution<double> AR_distribution{mean, std_dev};
-		double new_AR = AR_distribution(gen);
 
-		if(new_AR < 0) new_AR = 1;
-
-		if(rand()%2 == 0)
-			new_AR = 1 / new_AR;
-
-		//apply the new AR to a random kernel
-		blocks[rand()%blocks.size()]->changeShapeToAR(new_AR);
-			
 	} //end move5()
 
 
@@ -554,9 +553,9 @@ public:
 #endif
 		//if not an improvement, still make the change,
 		//but count it as a reject for equilibrium measurment
-		//if(new_cost >= prev_cost)
-		//	reject_count++;
-		//else 
+//		if(new_cost > prev_cost)
+//			reject_count++;
+//		else
 			accept_count++;
 	//	if(prev_move_num == 1)
 	//		return;
@@ -600,7 +599,11 @@ public:
 			undoMove1();
 			return;
 		}
-
+		else if(prev_move_num == 4)
+		{
+			undoMove4();
+			return;
+		}
 		else
 		{
 			for(unsigned int i = 0; i < prev_blocks.size(); i++)
@@ -641,10 +644,9 @@ public:
 		}
 	}
 
-	void resetToBest()
+	bool resetToBest()
 	{
 		cout << "update_best_count: " << update_best_count << endl;
-		update_best_count = 0;
 
 		blocks.clear();
 		for(unsigned int i = 0; i < best_blocks.size(); i++)
@@ -677,6 +679,14 @@ public:
 			cout << endl;
 		delete layout; //delete previous layout to prevent memory leak
 		layout = new Block_Wrapper<Kernel>(*findBestLayout());
+
+		if(update_best_count == 0)
+			return false;	
+		else 
+		{
+			update_best_count = 0;
+			return true;
+		}
 	}
 
 	//using the ops slicing string, combine blocks until a full layout is achieved
@@ -710,23 +720,27 @@ public:
 
 		//find the best area for the shapes in the layout
 		Block_Wrapper<Block>* new_layout = block_stack.top();
-		int prev_area = new_layout->getShapeArea(0);
-		int prev_index = 0;
+		new_layout->getShapes();
+		int best_area = new_layout->getShapeArea(0);
+		int best_index = 0;
 
 		for(unsigned int i = 1; i < new_layout->getShapes().size(); i++)
 		{
 			int next_area = new_layout->getShapeArea(i); 
-			if(next_area < prev_area)
+	//cout << "next_area: " << next_area << endl;
+			if(next_area < best_area)
 			{
-				prev_area = next_area;	
-				prev_index = i;
+				best_area = next_area;	
+				best_index = i;
 			}
+	//cout << "best_area: " << best_area << endl;
 		}
+
 			
 		//given the best area found for the layout,
 		//solidify the dimensions and positions of 
 		//all Blocks
-		new_layout->solidifyShape(prev_index);
+		new_layout->solidifyShape(best_index);
 		new_layout->updatePosition();
 		new_layout->updateDimensions();
 
@@ -838,6 +852,34 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 		else if(temp < MIN_TEMP)
 			return true;
 		else return false;
+	}
+
+	//get a wirelength for all connections to a block
+	double getBlockWirelength(Block* b)
+	{
+		double b_wirelen = 0;
+
+		//for each previous wire, add to total
+		
+		//for each next wire, add to total
+
+		return b_wirelen;
+	}
+
+	//attempts to legalize the layout by shrinking blocks to fit in WSE
+	//return true if successful
+	//false if unable to legalize
+	bool legalizeLayout()
+	{
+
+		return false;
+	}
+
+	//attempt to reduce wirelength by making "obvious" adjustments to blocks
+	//
+	void reduceWirelength()
+	{
+
 	}
 
 }; //end Slicing_Annealer

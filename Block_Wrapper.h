@@ -245,10 +245,24 @@ vector < pair<int, int> > getShapes() { return shapes; }
 	int getShapeArea(int index)
 	{
 		int area = shapes[index].first * shapes[index].second;	
+		
+		//return area;
+
 		//add a factor that penalizes large or small aspect ratios
-		double penalty = max((double)shapes[index].first/shapes[index].second, (double)shapes[index].second/shapes[index].first);
+		double penalty = max((double)shapes[index].first/(double)shapes[index].second, (double)shapes[index].second/(double)shapes[index].first);
 //		cout << "penalty = " << penalty << endl;
-		return area * pow(penalty, 3);
+		double weighted_area = area * pow(penalty, 3);
+		
+		//put a hard limit on width and height
+		if(shapes[index].first > WSE_width)
+			weighted_area *= pow((double)(shapes[index].first)/(double)WSE_width, 3);
+		if(shapes[index].second > WSE_height)
+			weighted_area *= pow((double)(shapes[index].second)/(double)WSE_height, 3);
+
+		if(weighted_area < 0 || weighted_area > INT_MAX)
+			weighted_area = INT_MAX;
+
+		return weighted_area;
 	}
 
 	//fully realize the shape specified by the index
@@ -269,9 +283,10 @@ vector < pair<int, int> > getShapes() { return shapes; }
 			}
 			else
 			{
-			base_block->copyDataFrom(base_block->getPossibleKernels()[2*(size-1) - index]);
-			//was chosen from rotated blocks!
-			base_block->setRotation(90);
+				//cout << "CHOSEN FROM ROTATED BLOCKS!\n";
+				base_block->copyDataFrom(base_block->getPossibleKernels()[2*(size-1) - index]);
+				//was chosen from rotated blocks!
+				base_block->setRotation(90);
 			}
 
 			base_block->computePerformance();

@@ -18,3 +18,19 @@ runfork:
 	./CometPlacer.out < benchmarks/fork.txt
 runconv:	
 	./CometPlacer.out < benchmarks/conv.txt
+runa:
+	./CometPlacer.out < benchmarks/A.kgraph
+runb:
+	./CometPlacer.out < benchmarks/B.kgraph
+runc:
+	./CometPlacer.out < benchmarks/C.kgraph
+rund:
+	./CometPlacer.out < benchmarks/D.kgraph
+rune:
+	./CometPlacer.out < benchmarks/E.kgraph
+runf:
+	./CometPlacer.out < benchmarks/F.kgraph
+rung:
+	./CometPlacer.out < benchmarks/G.kgraph
+runh:
+	./CometPlacer.out < benchmarks/H.kgraph
