@@ -118,5 +118,7 @@ public:
 	void performAnnealing();
 	
 	void computePossibleKernels();
+
+	bool legalizeLayout();
 };
 #endif

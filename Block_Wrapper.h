@@ -337,6 +337,15 @@ vector < pair<int, int> > getShapes() { return shapes; }
 		}
 	} //end solidifyShape()
 
+	//return true if the block fits in
+	bool isLegal()
+	{
+		if(getWidth() < WSE_width && getHeight() < WSE_height)
+			return true;
+		else
+			return false;
+	}
+
 //PRINTERS
 	void printShapes()
 	{

@@ -195,6 +195,9 @@ public:
 			best_ops.push_back(ops[i]);
 		}
 
+		for(unsigned int i = 0; i < blocks.size(); i++)
+			blocks[i]->computePossibleKernels();
+	
 	}
 
 
@@ -204,32 +207,31 @@ public:
 	//set starting temperature equal to 30*std_dev
 	float initializeTemp()
 	{
-	cout << "initializeTemp()" << endl;
-		for(unsigned int i = 0; i < blocks.size(); i++)
-			blocks[i]->computePossibleKernels();
+		cout << "initializeTemp()" << endl;
+
+		int num_initialize_moves = blocks.size()*100;
+
+		//perform random cell swaps to obtain a randomized layout
+		for(int i = 0; i < num_initialize_moves; i++)
+			performMove(); //random move with no rejection
+
 
 		layout = findBestLayout();
 		prev_layout = layout;
 		
 		resetRejectCount();
 		prev_cost = costFunction();
+
 		//initiate best cost to to initial placement
 		best_cost = prev_cost;
 		best_wirelen = computeTotalWirelength();
-		updateBest();
 	
-	//	temp = 10000;	return temp;
-///////
-		int num_initialize_moves = blocks.size()*100;
-		steps_per_temp = max(5000, (int)(blocks.size()*50));
+		steps_per_temp = max(5000, (int)(pow(blocks.size(), 1.)*10));
 
 		printf("Initializing temp...(%d random moves)\n", 2*num_initialize_moves);
 		vector <double> deltas;
 		float new_cost, delta;
 			
-		//perform random cell swaps to obtain a randomized layout
-		for(int i = 0; i < num_initialize_moves; i++)
-			performMove(); //random move with no rejection
 			
 		//perform random cell swaps and record deltas	
 		for(int i = 0; i < num_initialize_moves; i++)
@@ -249,15 +251,16 @@ public:
 			acceptMove(new_cost); //always accept the move during initialization	
 		}
 		
+		updateBest();
+
 		prev_layout = layout;
 
 		double std_dev = StandardDeviation(deltas);
 			
-		temp = 0.2*std_dev; //for a temperature of 30*std_dev,
+		temp = .4*std_dev; //for a temperature of 30*std_dev,
 				//there will be a 90% chance to accept a very bad change of 3*std_dev
 		start_temp = temp;
 		cout << "\n\n************************\n";
-		cout << "std_dev: " << std_dev << endl;		
 		cout << "Starting Temp: " << temp << endl;
 		cout << "************************\n";
 		
@@ -292,25 +295,25 @@ public:
 	{
 		//control the temperature schedule
 
-		if(temp < start_temp/1000)
+		if(temp < start_temp/800)
 		{
 			anneal_phase = 4;
 			reduction_factor = .9825;
 		}
-		else if(temp < start_temp/100)
+		else if(temp < start_temp/200)
 		{
 			anneal_phase = 3;
 			reduction_factor = .975;
 		}
-		else if(temp < start_temp/10)
+		else if(temp < start_temp/50)
 		{
 			anneal_phase = 2;
-			reduction_factor = .95;
+			reduction_factor = .97;
 		}
 		else
 		{
 			anneal_phase = 1;
-			reduction_factor = .90;
+			reduction_factor = .95;
 		}
 
 		temp *= reduction_factor;
@@ -621,6 +624,7 @@ public:
 	int update_best_count = 0;
 	void updateBest()
 	{
+
 		update_best_count++;
 		best_blocks.clear();
 
@@ -780,6 +784,8 @@ public:
 		//impose a penalty for shapes that aren't within the allowed area! 
 		cost *= max(1.0, pow(layout->getWidth() / WSE_width, anneal_phase));
 		cost *= max(1.0, pow(layout->getHeight() / WSE_height, anneal_phase));
+		if(anneal_phase > 1 && !layout->isLegal())
+			cost *= 2;
 #ifdef DEBUG
 cout << "Wirelength: " << wirelen << "*" << wirepenalty << " = "<< wirelen*wirepenalty << endl;
 cout << "Longest Time: " << longest_time << endl;
@@ -846,10 +852,11 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 	{
 		cout << "reject_count: " << reject_count << "\taccept_count: " << accept_count << "\tsteps_per_temp: " << steps_per_temp << endl;
 		//consider equilibrium reached if at least 99% of moves are rejected
-		if(reject_count >= steps_per_temp*0.99)
-			return true;
+	//	if(reject_count >= steps_per_temp*0.99)
+	//		return true;
 		//or stop if reach a small enough temperature
-		else if(temp < MIN_TEMP)
+	//	else 
+		if(temp < MIN_TEMP)
 			return true;
 		else return false;
 	}
@@ -871,6 +878,27 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 	//false if unable to legalize
 	bool legalizeLayout()
 	{
+		cout << "\n***legalizeLayout()***\n";
+		
+		//naive approach, decrease the size of shortest block
+		//until legal layout is found
+		int MAX_TRIES = 10000;
+		for(int i = 0; i < MAX_TRIES; i++)
+		{
+			if(layout->isLegal())
+			{
+				cout << "Legal layout found!\n";
+				return true;
+			}
+
+			cout << "Layout not legal! " << i  << endl;
+			
+			Block* b = getShortestBlock();
+
+			b->decreaseSize();
+
+			layout = findBestLayout();
+		}
 
 		return false;
 	}

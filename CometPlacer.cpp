@@ -404,10 +404,13 @@ void CometPlacer::printKernels()
 	cout << "Longest Time: " << getLongestTime() << endl;
 	cout << "Shortest Time: " << getShortestTime() << endl;
 	cout << "Average Time: " << getAverageTime() << endl;
+	cout << "Target Time: " << head->getTargetTime() << endl;
+
+	return;
 
 	for(Kernel* k : kernels)
 	{
-	//	k->printPerformance();
+		k->printPerformance();
 	}
 }
 
@@ -626,11 +629,11 @@ void CometPlacer::inflateKernelSize(double fill_percent_p1)
 	}
 
 	//After inflating kernels to fill most of the WSE, set
-	//the target time for each kernel to be the longest kernel time 
-	int longest_time = getLongestTime();
+	//the target time for each kernel to be the avg kernel time 
+	int avg_time = getAverageTime();
 
 	for(unsigned int i = 0; i < kernels.size(); i++)
-		kernels[i]->setTargetTime(longest_time);
+		kernels[i]->setTargetTime(avg_time);
 cout << "filled_percent: " << filled_percent  << endl << endl;
 }//end inflateKernelSize()
 
@@ -652,7 +655,7 @@ bool CometPlacer::enforceMemoryConstraint()
 			k->computePerformance();
 		}
 
-		cout << k->getName() << " meets memory constraints with " << k->getMemory() << " kB/core!\n";
+	//	cout << k->getName() << " meets memory constraints with " << k->getMemory() << " kB/core!\n";
 
 	}
 
@@ -682,6 +685,15 @@ void CometPlacer::performAnnealing()
 
 	while(!annealer.equilibriumReached()) //perform annealing steps until exit criteria is met
 	{
+		
+		auto stop = chrono::steady_clock::now(); 
+		auto duration = chrono::duration_cast<chrono::seconds>(stop - start);
+		if(duration.count() > timelimit - 2*((double)duration.count()/max(1,annealer.getEpochCount())))
+		{
+			cout << "Timelimit: " << timelimit << "\tElapsed: " << duration.count() << endl;
+			cout << "\n\nEnding due to timelimit!\n\n";
+			break;
+		}
 
 		annealer.performEpoch();
 		/*
@@ -754,6 +766,11 @@ void CometPlacer::printTimestamp()
 	timestamp = clock();
 }
 
+bool CometPlacer::legalizeLayout()
+{
+	return annealer.legalizeLayout();
+}
+
 int main(int argc, char** argv)
 {
 	cout << "****CometPlacer for WSE****\n\n";
@@ -813,6 +830,7 @@ int main(int argc, char** argv)
 //	placer.printTimeAndArea();
 	placer.printInfo();
 	placer.enforceMemoryConstraint();
+//	placer.legalizeLayout();
 	placer.updateVisual(PAUSE); 
 
 	exit(0);

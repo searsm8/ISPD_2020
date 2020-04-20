@@ -318,27 +318,26 @@ public:
 			}
 			else if(!increaseSize())
 			{
-				if(!increaseSize())
-					break;
+				break;
 			}
 
 		
 			computePerformance();
-//			cout <<"AFTER MOVE: Target AR: "<<getTargetAR()<<" Actual AR: " << getAR() << endl;
 		}
-		
 		computePerformance();
 		//try to get back to the original area
 		while(getTime() < target_time) 
 		{
-			if(!decreaseSize())
-				break;
+			//if(!decreaseSize())
+			//	break;
+			decreaseSize();
 			computePerformance();
 		}
 		while(getTime() > target_time) 
 		{
-			if(!increaseSize())
-				break;
+		//	if(!increaseSize())
+		//		break;
+			increaseSize();
 			computePerformance();
 		}
 
@@ -379,9 +378,25 @@ public:
 	{
 		//don't increase an EP beyond the FP!!! it gains no time because ceil()
 		if(getAR() < getTargetAR())
-			return changeHeight(true);
+		{
+			if(changeHeight(true))
+				return true;
+			else 
+			{
+				changeWidth(true);
+				return false;
+			}
+		}
 		else
-			return changeWidth(true);
+		{
+			if(changeWidth(true))
+				return true;
+			else 
+			{
+				changeHeight(true);
+				return false;
+			}
+		}
 	}
 
 	//decrease the size of the kernel based on the target AR
@@ -389,9 +404,25 @@ public:
 	virtual bool decreaseSize()
 	{
 		if(getAR() > getTargetAR())
-			return changeHeight(false);
+		{
+			if(changeHeight(false))
+				return true;
+			else 
+			{
+				changeWidth(false);
+				return false;
+			}
+		}
 		else
-			return changeWidth(false);
+		{
+			if(changeWidth(false))
+				return true;
+			else 
+			{
+				changeHeight(false);
+				return false;
+			}
+		}
 	}
 
 	virtual bool changeWidth(bool increase) { cout << "changeWidth from Kernel class!!!\n"; return true; }

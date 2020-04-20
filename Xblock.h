@@ -414,17 +414,20 @@ public:
 		
 	bool changeWidth(bool increase=true)
 	{
-	//	cout << "changeWidth() of Xblock: " << getName() << endl;
+//		cout << "changeWidth(" << increase << ") of Xblock: " << getName() << endl;
 		Kernel* k;
 	        if(increase) k = getLongestConv();
 		else k = getShortestConv();
 
-		return k->setEPtoNextValue("k", increase);
+		bool success = k->setEPtoNextValue("k", increase);
+
+//		cout << (success ? "success!" : "no change~") << endl;
+		return success;
 	}
 
 	bool changeHeight(bool increase=true)
 	{		
-	//	cout << "changeHeight() of Xblock: " << getName() << endl;
+//		cout << "changeHeight(" << increase << ") of Xblock: " << getName() << endl;
 		string EP_to_increase = "c";
 
 		if(increase)
@@ -444,7 +447,10 @@ public:
 				EP_to_increase = "w";
 		}
 		//increase the next EP	
+//		cout << "prior EP[" << EP_to_increase << "]: " << EP[EP_to_increase] << endl;
 		bool success = setEPtoNextValue(EP_to_increase, increase);
+//		cout << (success ? "success!" : "no change~") << endl;
+//		cout << "after EP[" << EP_to_increase << "]: " << EP[EP_to_increase] << endl;
 		return success;
 	}
 
