@@ -5,7 +5,7 @@
 //if VISUALIZE is defined, then the SDL library will be used to create a visualization
 //if SDL is not installed, comment this #define
 //
-#define VISUALIZE
+//#define VISUALIZE
 
 //DEBUG controls print statements
 //
@@ -655,7 +655,7 @@ bool CometPlacer::enforceMemoryConstraint()
 			k->computePerformance();
 		}
 
-	//	cout << k->getName() << " meets memory constraints with " << k->getMemory() << " kB/core!\n";
+		cout << k->getName() << " meets memory constraints with " << k->getMemory() << " kB/core!\n";
 
 	}
 
@@ -817,7 +817,7 @@ int main(int argc, char** argv)
 
 	placer.enforceMemoryConstraint();
 //	placer.updateVisual(PAUSE); 
-	placer.inflateKernelSize(0.8);
+	placer.inflateKernelSize(0.7);
 	placer.enforceMemoryConstraint();
 //	placer.printKernels();
 //	placer.printTimeAndArea();
@@ -828,8 +828,9 @@ int main(int argc, char** argv)
 	placer.printOutputToFile(output_filepath);
 //	placer.printKernels();
 //	placer.printTimeAndArea();
-	placer.printInfo();
 	placer.enforceMemoryConstraint();
+	placer.printInfo();
+	placer.printKernels();
 //	placer.legalizeLayout();
 	placer.updateVisual(PAUSE); 
 

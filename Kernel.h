@@ -215,6 +215,7 @@ public:
 	//fill in possible_kernels
 	void computePossibleKernels()
 	{
+		possible_kernels.clear();
 
 		vector<double> target_ARs = {0.035, 0.04, 0.045, 0.05, 0.06, 0.07, 0.08, 0.1, 0.2, 0.3, 0.5, 0.75,1}; 
 		//vector<double> target_ARs = {.005, 0.0075, .01, .015, .018, .02, .03, .04, .05, .06, .07, .08, .09, .1, .15, 0.2, .25, .3, .4, .5}; 

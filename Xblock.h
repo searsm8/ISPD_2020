@@ -308,9 +308,19 @@ public:
 		//add Formal Parameters
 		params.push_back(getFP("H"));
 		params.push_back(getFP("W"));
-		params.push_back(getFP("F"));
-		//if(type == "cblock")
-		//	params.push_back(getFP("T"));
+		if(type == "conv")
+		{
+			params.push_back(getFP("C"));
+			params.push_back(getFP("K"));
+			params.push_back(getFP("R"));
+			params.push_back(getFP("S"));
+			params.push_back(getFP("T"));
+			params.push_back(getFP("U"));
+		}
+		else
+		{
+			params.push_back(getFP("F"));
+		}
 
 		//add Execution Parameters
 		params.push_back(convs[0].getEP("h"));

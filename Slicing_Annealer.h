@@ -44,6 +44,7 @@ private:
 	double prev_cost;
 	double best_cost;
 	double best_wirelen;
+	bool best_is_legal;
 
 	vector<Block*> best_blocks;
 	vector<string> best_ops;
@@ -68,10 +69,11 @@ public:
 	Slicing_Annealer() {}
 
 	Slicing_Annealer(int init_wirepenalty, int init_width, int init_height) 
-	:wirepenalty(init_wirepenalty), WSE_width(init_width), WSE_height(init_height), reduction_factor(.9), steps_per_temp(1000), temp(0), prev_cost(0),best_cost(-1), move_count(0), prev_move_num(0), reject_count(0), MIN_TEMP(10), epoch_count(0), anneal_phase(0)
+	:wirepenalty(init_wirepenalty), WSE_width(init_width), WSE_height(init_height), reduction_factor(.9), steps_per_temp(1000), temp(0), prev_cost(0),best_cost(-1), move_count(0), prev_move_num(0), reject_count(0), MIN_TEMP(1), epoch_count(0), anneal_phase(0)
 	{
 		move_weights = {70, 20, 10, 10, 0}; //determines how often each type of move is done
 		move_indices = {0, 0, 0, 0, 0}; 
+		best_is_legal = false;
 	}
 
 
@@ -155,6 +157,7 @@ public:
 	{
 		if(!print) return;
 		cout << "Prev Cost: " << prev_cost << "\tBest Cost: " << best_cost << "\tBest Wirelen: " << best_wirelen << endl;
+		cout << "best_is_legal: " << best_is_legal << endl;
 	}
 
 	void printMoveCount()
@@ -198,6 +201,15 @@ public:
 		for(unsigned int i = 0; i < blocks.size(); i++)
 			blocks[i]->computePossibleKernels();
 	
+		layout = findBestLayout();
+		prev_layout = layout;
+		
+		resetRejectCount();
+		prev_cost = costFunction();
+
+		//initiate best cost to to initial placement
+		best_cost = prev_cost;
+		best_wirelen = computeTotalWirelength();
 	}
 
 
@@ -212,21 +224,12 @@ public:
 		int num_initialize_moves = blocks.size()*100;
 
 		//perform random cell swaps to obtain a randomized layout
-		for(int i = 0; i < num_initialize_moves; i++)
-			performMove(); //random move with no rejection
+	//	for(int i = 0; i < num_initialize_moves; i++)
+	//		performMove(); //random move with no rejection
 
 
-		layout = findBestLayout();
-		prev_layout = layout;
-		
-		resetRejectCount();
-		prev_cost = costFunction();
-
-		//initiate best cost to to initial placement
-		best_cost = prev_cost;
-		best_wirelen = computeTotalWirelength();
 	
-		steps_per_temp = max(5000, (int)(pow(blocks.size(), 1.)*10));
+		steps_per_temp = max(50000, (int)(pow(blocks.size(), 1.)*10));
 
 		printf("Initializing temp...(%d random moves)\n", 2*num_initialize_moves);
 		vector <double> deltas;
@@ -257,7 +260,7 @@ public:
 
 		double std_dev = StandardDeviation(deltas);
 			
-		temp = .4*std_dev; //for a temperature of 30*std_dev,
+		temp = .6*std_dev; //for a temperature of 30*std_dev,
 				//there will be a 90% chance to accept a very bad change of 3*std_dev
 		start_temp = temp;
 		cout << "\n\n************************\n";
@@ -572,10 +575,12 @@ public:
 		prev_cost = new_cost;
 
 		//if a new best cost has been found, update blocks and variables
-		if(new_cost < best_cost || best_cost == -1)
+		if(layout->isLegal())
+		if((!best_is_legal) || (new_cost < best_cost || best_cost == -1))
 		{
 			best_cost = new_cost;
 			best_wirelen = computeTotalWirelength();
+
 			updateBest();
 			/*
 			for(unsigned int i = 0; i < blocks.size(); i++)
@@ -624,6 +629,10 @@ public:
 	int update_best_count = 0;
 	void updateBest()
 	{
+		if(layout->isLegal())
+		{
+			best_is_legal = true;
+		}
 
 		update_best_count++;
 		best_blocks.clear();
@@ -908,6 +917,11 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 	void reduceWirelength()
 	{
 
+	}
+
+	//clean up the layout so that it is useable!
+	void cleanUp()
+	{
 	}
 
 }; //end Slicing_Annealer
