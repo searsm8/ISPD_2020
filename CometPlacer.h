@@ -28,14 +28,12 @@ private:
 	long avg_time;
 
 	string output;
-
+public:
 	Slicing_Annealer<Kernel> annealer;
 
 #ifdef VISUALIZE
 	SDL_Window* window;
 #endif
-
-public:
 
 
 	//constructor
@@ -120,5 +118,6 @@ public:
 	void computePossibleKernels();
 
 	bool legalizeLayout();
+	void finalizeLayout();
 };
 #endif

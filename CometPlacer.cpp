@@ -73,8 +73,8 @@ cout << kernels[i]->getName() << "  AR: " << new_AR << endl;
 	setInitialPlacement();
 	computeAvgTime();
 
-	for(unsigned int i = 0; i < kernels.size(); i++)
-		fixName(kernels[i], i+1);
+	//for(unsigned int i = 0; i < kernels.size(); i++)
+	//	fixName(kernels[i], i+1);
 }
 
 
@@ -128,7 +128,7 @@ cout << "Begin readNode()" << endl;;
 
 	//for other kernels, create the appropriate object
 		map<string, int> formal_params;
-		string kernel_name;
+		string kernel_name = "k";
 		//read in all the Formal Parameters
 		for(unsigned int i = 1; i < elements.size(); i++)
 		{
@@ -164,6 +164,7 @@ cout << "Begin readNode()" << endl;;
 	assert(new_kernel != NULL);
 	
 	new_kernel->setName(elements[0]);
+	new_kernel->setDisplayName(kernel_name);
 	kernels.push_back(new_kernel);
 
 } //end readNode()
@@ -306,6 +307,8 @@ void CometPlacer::fixName(Kernel* k, int ID)
 	string new_name = "k";
 	if(ID < 10)
 		new_name += "0";
+	//if(ID < 100)
+	//	new_name += "0";
 	new_name += to_string(ID);
 
 	k->setName(new_name);
@@ -342,8 +345,8 @@ void CometPlacer::printOutputToFile(string output_filepath)
 
 void CometPlacer::printUnion(Kernel* k, ofstream& output_file)
 {
-	output_file << k->getName() << " ";
-	cout << k->getName() << " ";
+	output_file << k->getDisplayName() << " ";
+	cout << k->getDisplayName() << " ";
 
 	//call recursively to all kernels that this kernel points to
 	vector<Kernel*> next_kernels = k->getNextKernels();
@@ -356,8 +359,8 @@ void CometPlacer::printUnion(Kernel* k, ofstream& output_file)
 
 void CometPlacer::printKernelToFile(Kernel* k, ofstream& output_file)
 {
-	output_file << k->getName() << " = " << k->getType() << "( ";
-	cout << k->getName() << " = " << k->getType() << "( ";
+	output_file << k->getDisplayName() << " = " << k->getType() << "( ";
+	cout << k->getDisplayName() << " = " << k->getType() << "( ";
 	vector<int> params = k->getParameters();     
 	for(unsigned int i = 0; i < params.size(); i++)
 	{
@@ -368,11 +371,11 @@ void CometPlacer::printKernelToFile(Kernel* k, ofstream& output_file)
 	cout << ")" << endl;
 
 
-	output_file << k->getName() << " : name('" << k->getName() << ")" << endl;;
-	cout << k->getName() << " : name('" << k->getName() << ")" << endl;;
+	output_file << k->getDisplayName() << " : name('" << k->getDisplayName() << ")" << endl;;
+	cout << k->getDisplayName() << " : name('" << k->getDisplayName() << ")" << endl;;
 
-	output_file << k->getName() << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
-	cout << k->getName() << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
+	output_file << k->getDisplayName() << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
+	cout << k->getDisplayName() << " : place(" << k->getX() << " " << k->getY() << " R" << k->getRotation() << ")" << endl;
 
 	printed_kernels.push_back(k);
 
@@ -406,11 +409,11 @@ void CometPlacer::printKernels()
 	cout << "Average Time: " << getAverageTime() << endl;
 	cout << "Target Time: " << head->getTargetTime() << endl;
 
-	return;
 
-	for(Kernel* k : kernels)
+	//for(Kernel* k : kernels)
 	{
-		k->printPerformance();
+		//k->printPerformance();
+		//cout << "R" << k->getRotation() << endl;
 	}
 }
 
@@ -650,7 +653,7 @@ bool CometPlacer::enforceMemoryConstraint()
 		//memory constraint check here!
 		while(k->getMemory() > MAX_ALLOWED_MEMORY)
 		{
-//			cout << "To meet memory constraint, increased size of " << k->getName() << "\t(Memory = " << k->getMemory() << ")" << endl;
+			cout << "\n!!!!!To meet memory constraint, increased size of " << k->getName() << "\t(Memory = " << k->getMemory() << ")" << endl << endl;
 			k->increaseSize();
 			k->computePerformance();
 		}
@@ -735,7 +738,7 @@ void CometPlacer::performAnnealing()
 	cout << "Displaying best solution..." << endl;
 	annealer.resetToBest();
 	annealer.printResults();
-	cout << "\n****END performAnnealing()****\n";
+	cout << "\n****END performAnnealing()****\n\n";
 } //performAnnealing()
 
 void CometPlacer::computePossibleKernels()
@@ -769,6 +772,11 @@ void CometPlacer::printTimestamp()
 bool CometPlacer::legalizeLayout()
 {
 	return annealer.legalizeLayout();
+}
+
+void CometPlacer::finalizeLayout()
+{
+	return annealer.finalizeLayout();
 }
 
 int main(int argc, char** argv)
@@ -819,19 +827,20 @@ int main(int argc, char** argv)
 //	placer.updateVisual(PAUSE); 
 	placer.inflateKernelSize(0.7);
 	placer.enforceMemoryConstraint();
-//	placer.printKernels();
 //	placer.printTimeAndArea();
 //	placer.updateVisual(NOPAUSE); 
 
 	placer.performAnnealing();
 	//placer.updateVisual(true); 
-	placer.printOutputToFile(output_filepath);
 //	placer.printKernels();
 //	placer.printTimeAndArea();
-	placer.enforceMemoryConstraint();
+//	placer.enforceMemoryConstraint();
 	placer.printInfo();
 	placer.printKernels();
-//	placer.legalizeLayout();
+//	placer.updateVisual(PAUSE);
+//	placer.annealer.finalizeLayout();
+	placer.printKernels();
+	placer.printOutputToFile(output_filepath);
 	placer.updateVisual(PAUSE); 
 
 	exit(0);

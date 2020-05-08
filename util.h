@@ -10,6 +10,7 @@
 #include <cassert>
 
 #include <string>
+#include <cstdio>
 #include <vector>
 #include <cmath>
 
@@ -18,7 +19,7 @@ using namespace std;
 //GLOBAL VARIABLES
 	bool print = true; //set false to surpress printing info
 
-int MAX_ALLOWED_MEMORY = 48000/2; //for a single core on the WSE
+int MAX_ALLOWED_MEMORY = 10000; //for a single core on the WSE
 int INT_MAX = 2147483647;
 int WSE_width=633, WSE_height=633;
 

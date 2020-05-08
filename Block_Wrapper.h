@@ -338,12 +338,17 @@ vector < pair<int, int> > getShapes() { return shapes; }
 	} //end solidifyShape()
 
 	//return true if the block fits in
-	bool isLegal()
+	bool isLegal(bool print=false)
 	{
+		if(print) cout << "isLegal(): width: " << getWidth() << " < " << WSE_width << "\theight: " << getHeight() << " < " << WSE_height << endl;
 		if(getWidth() < WSE_width && getHeight() < WSE_height)
+		{
 			return true;
+		}
 		else
+		{
 			return false;
+		}
 	}
 
 //PRINTERS

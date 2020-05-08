@@ -37,12 +37,18 @@ public:
 		int W = formal_params["W"];
 		int F = formal_params["F"];
 
+		//initialize formal parameters
+		FP = formal_params;
+
 		if(type == "dblock")
 		{
 			convs.reserve(3);
 			convs.push_back(Conv(H, W, 1, 1, F,   F/4, 1, i, i, i, i));
 			convs.push_back(Conv(H, W, 3, 3, F/4, F/4, 1, i, i, i, i));
 			convs.push_back(Conv(H, W, 1, 1, F/4, F,   1, i, i, i, i));
+
+			FP["C"] = F/4;
+			FP["K"] = F/4;
 		}
 
 		if(type == "cblock")
@@ -52,6 +58,9 @@ public:
 			convs.push_back(Conv(H, W, 3, 3,  F/4, F/4, 2, i, i, i, i));
 			convs.push_back(Conv(H/2,W/2, 1,1,F/4, F,   1, i, i, i, i));
 			convs.push_back(Conv(H, W, 1, 1,  F/2, F,   2, i, i, i, i));
+
+			FP["C"] = F/4;
+			FP["K"] = F/4;
 		}
 
 		if(type == "conv")
@@ -59,8 +68,6 @@ public:
 			convs.push_back(Conv(H, W, formal_params["R"], formal_params["S"], formal_params["C"], formal_params["K"], formal_params["T"], i, i, i, i));
 		}
 		
-		//initialize formal parameters
-		FP = formal_params;
 
 		//initialize Execution paramaters
 		EP.insert(pair<string, int>("h", i));	
@@ -328,8 +335,9 @@ public:
 		
 		//extra special parameter???
 		//if(type == "cblock")
-		//	params.push_back(1);
-		//
+		//	params.push_back(getFP("T"));
+			//params.push_back(1);
+	
 		for(unsigned int i = 0; i < convs.size(); i++)
 			params.push_back(convs[i].getEP("c"));
 		for(unsigned int i = 0; i < convs.size(); i++)
@@ -353,6 +361,7 @@ public:
 
        	bool setEPtoNextValue(string EP_key, bool increase=true)
 	{
+	//	cout << "setEPtoNextValue()\n";
 		bool change_made = false;
 
 		double min_EP = convs[0].getNextEPValue(EP_key, increase);
@@ -378,9 +387,13 @@ public:
 		{
 			EP[EP_key] = min_EP;
 			computePerformance();
+
+			//update previous move variables
+			prev_was_increase = increase;
+			last_changed_EP = EP_key;
 		}
 		else
-			cout << "!!!!No changes made for setNextEP(" << EP_key << ") to " << min_EP <<  "\n";
+			cout << "!!!!No changes made for setNextEP(" << EP_key << ") to " << min_EP << " FP: " << getAnalogousFP(EP_key) << endl;
 #ifdef DEBUG
 		printParameters();
 		printPerformance();
@@ -421,10 +434,10 @@ public:
 		} 
 		return shortest_conv;	
 	}
-		
+
 	bool changeWidth(bool increase=true)
 	{
-//		cout << "changeWidth(" << increase << ") of Xblock: " << getName() << endl;
+		//cout << "changeWidth(" << increase << ") of Xblock: " << getName() << endl;
 		Kernel* k;
 	        if(increase) k = getLongestConv();
 		else k = getShortestConv();
@@ -437,9 +450,9 @@ public:
 
 	bool changeHeight(bool increase=true)
 	{		
-//		cout << "changeHeight(" << increase << ") of Xblock: " << getName() << endl;
+		//cout << "changeHeight(" << increase << ") of Xblock: " << getName() << endl;
 		string EP_to_increase = "c";
-
+/*
 		if(increase)
 		{
 			//find the smallest EP that affects height
@@ -447,6 +460,34 @@ public:
 				EP_to_increase = "h";
 			if(getEP("w") <= getEP("c") && getEP("w") <= getEP("h"))
 				EP_to_increase = "w";
+
+			//if(EP_to_increase == "c")
+			//	cout << "INCREASING c: " << getEP("c") << " C: " << getFP("C") <<  endl;
+
+			//	cout << "INCREASING h: " << getEP("h") << " H: " << getFP("H") <<  endl;
+			//	cout << "INCREASING w: " << getEP("w") << " W: " << getFP("W") <<  endl;
+			//make sure to pick an EP that can actually be increased
+			if(getEP(EP_to_increase) >= getAnalogousFP(EP_to_increase))
+			{
+				if(EP_to_increase == "c")
+				{
+					if(getEP("h") < getFP("H"))
+						EP_to_increase = "h";
+					else EP_to_increase = "w";
+				}
+				else if(EP_to_increase == "h")
+				{
+					if(getEP("w") < getFP("W"))
+						EP_to_increase = "w";
+					else EP_to_increase = "c";
+				}
+				else if(EP_to_increase == "w")
+				{
+					if(getEP("c") < getFP("C"))
+						EP_to_increase = "c";
+					else EP_to_increase = "h";
+				}
+			}
 		}
 		else
 		{
@@ -455,7 +496,28 @@ public:
 				EP_to_increase = "h";
 			if(getEP("w") >= getEP("c") && getEP("w") >= getEP("h"))
 				EP_to_increase = "w";
+
+			if(EP_to_increase == "w" && getEP("w") <= 1)
+				EP_to_increase = "h";
+			if(EP_to_increase == "h" && getEP("h") <= 1)
+				EP_to_increase = "c";
+			if(EP_to_increase == "c" && getEP("c") <= 1)
+				EP_to_increase = "w";
+			if(heightIsSmallAsPossible())
+				cerr << "!!!!!" << getName() << " is as small as possible!" << endl;
 		}
+*/
+
+		//choose a random EP to change
+		int choice = rand()%3;
+//		cout << "choice: " << choice << endl;
+		switch(choice)
+		{
+			case 0: EP_to_increase = "c"; break;
+			case 1: EP_to_increase = "h"; break;
+			case 2: EP_to_increase = "w"; break;
+		}
+//		cout << "EP_to_increase: " << EP_to_increase << endl;
 		//increase the next EP	
 //		cout << "prior EP[" << EP_to_increase << "]: " << EP[EP_to_increase] << endl;
 		bool success = setEPtoNextValue(EP_to_increase, increase);

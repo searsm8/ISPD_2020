@@ -187,15 +187,15 @@ public:
 
 		if(increase && orig_EP >= my_FP)
 		{
-//			cout << getName() << ": " << "No increase possible for EP: " << EP_key << endl;
+			cout << getName() << ": " << "No increase possible for EP: " << EP_key << "=" << orig_EP << " FP: " << my_FP << endl;
 			return orig_EP;
 		}
 		if(!increase && orig_EP <= 1)
 		{
-//			cout << getName() << ": " << "No decrease possible for EP: " << EP_key << endl;
+			cout << getName() << ": " << "No decrease possible for EP: " << EP_key << "=" << orig_EP << " FP: " << my_FP << endl;
 			return orig_EP;
 		}
-		
+
 		double orig_time_term = ceil(my_FP / orig_EP);
 
 		double new_EP;
@@ -205,7 +205,7 @@ public:
 		if(new_EP == orig_EP)
 			new_EP += (increase ? 1 : -1);
 
-//		cout << "getNextEPValue("<<EP_key<<", "<<increase<<") from " << orig_EP << " to " << new_EP << endl;
+		//		cout << "getNextEPValue("<<EP_key<<", "<<increase<<") from " << orig_EP << " to " << new_EP << endl;
 
 		//don't increase beyond FP!
 		if(increase && new_EP > my_FP) 
@@ -241,7 +241,7 @@ public:
 		}
 		return setEPtoNextValue(EP_to_increase, increase);
 	}
-	
+
 
 };
 #endif

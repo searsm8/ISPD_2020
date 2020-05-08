@@ -37,6 +37,7 @@ public:
 	double target_time;
 
 	string name;
+        string display_name; //used for outputting to file
 
 	map<string, int> FP; //Formal parameters. Should not be changed.
 	map<string, int> EP; //Execution parameters
@@ -48,6 +49,9 @@ public:
 	Kernel* prev_kernel;
 
 	vector<int> colors;
+
+	bool prev_was_increase;
+	string last_changed_EP;
 
 	//constructors
 	Kernel()
@@ -61,6 +65,8 @@ public:
 		name = "Kernel " + to_string(ID);
 		type = "Kernel";
 		target_AR = 1;
+		prev_was_increase = true;
+		last_changed_EP = "h";
 
 		//assign a random color to this kernel
 		for(unsigned int i = 0; i < 3; i++)
@@ -114,6 +120,8 @@ public:
 	string getType() { return type; }
 
 	string getName() { return name; }
+
+	string getDisplayName() { return display_name; }
 
 	int getID() { return ID; }
 
@@ -208,9 +216,28 @@ public:
 
 	void setName(string new_name) { name = new_name; }
 
+	void setDisplayName(string new_name) 
+	{
+		display_name = new_name;
+		if(display_name[0] == '\'')
+			display_name = display_name.substr(1);
+		if(display_name[display_name.size()-1] == '\'')
+			display_name = display_name.substr(0, display_name.size()-1);
+
+       	}
+
 	void setAR(double new_AR) { target_AR = new_AR; }
 
 	void setTargetTime(double new_time) { target_time = new_time; }
+
+	void setPossibleKernels()
+	{
+		possible_kernels.clear();
+	//	printParameters();
+		possible_kernels.push_back(createCopy());
+		possible_kernels.push_back(createCopy());
+	//	possible_kernels[0]->printParameters();
+	}
 
 	//fill in possible_kernels
 	void computePossibleKernels()
@@ -223,35 +250,61 @@ public:
 
 		//for( unsigned int i = 0; i < target_ARs.size(); i++)
 		int num_shapes = 50;
+		int count = 0;
 		double target_AR = 0.01;
+		bool ready_to_exit = false;
 		for( int i = 0; i < num_shapes; i++)
 		{
 			target_AR *= 1.1;
-			changeShapeToAR(target_AR);
+			if(!changeShapeToAR(target_AR))
+				ready_to_exit = true;
 		
 			//if same height as previous, remove previous
-			if(possible_kernels.size() > 0 && possible_kernels.back()->getHeight() >= getHeight())
+			if(possible_kernels.size() > 1 && possible_kernels.back()->getHeight() >= getHeight())
 				possible_kernels.pop_back();
 
 			//if different shape found, add current EPs to possible_EPs
 			if(width < MAX_WIDTH && width < MAX_HEIGHT &&
 				height < MAX_WIDTH && height < MAX_HEIGHT)
 			{
+				 //don't add blocks that break mem constraint
+				if(memory < MAX_ALLOWED_MEMORY)
+				{
 				if(possible_kernels.size() == 0 || possible_kernels.back()->getWidth() > getWidth())
 				{
 			//		cout << getName() << ": ADDING shape for AR: " << target_AR << " : " << width << "x" << height << endl;
+					count = 0;
 					possible_kernels.push_back(createCopy());
 				//	break; //add only one shape, then break
 				}
+				}
+//				else 	cout << "memory: " << memory << "\tMAX_ALLOWED_MEMORY: " << MAX_ALLOWED_MEMORY<< endl;
 			//	else cout << getName() <<  ": NO REASON to add shape for AR: " << target_AR  << " : " << width << "x" << height << endl;
 			}
-			//else cout << getName() << ": UNABLE to add shape for AR: " << target_AR << " : " << width << "x" << height << "\tMAX_WIDTH: " << MAX_WIDTH << "\tMAX_HEIGHT: " << MAX_HEIGHT << endl;
+			else cout << getName() << ": UNABLE to add shape for AR: " << target_AR << " : " << width << "x" << height << "\tMAX_WIDTH: " << MAX_WIDTH << "\tMAX_HEIGHT: " << MAX_HEIGHT << endl;
+//			cout << "width: " << width << endl;
+//			cout << "height: " << height << endl;
+//			cout << name <<  " possible_kernels.size() = " << possible_kernels.size() << endl;
 
+			if(count++ > 10) //tried 10 shapes in a row with none added
+			{
+				cout << "tried 10 shapes without any added!\n";
+				count = 0;
+//				break;
+			}
+
+			if(ready_to_exit)
+			{
+				cout << "ready_to_exit\n";
+				break;
+			}
 		}
 
 		//set to first shape
 		shape_index = 0;
 		setShape(0);
+		cout << "End computePossibleKernels()\n";
+//		exit(1);
 	}
 
 	vector<Kernel*> getPossibleKernels()
@@ -285,9 +338,11 @@ public:
 	}
 
 	//change the shape of the kernel to achieve the new target AR
-	void changeShapeToAR(double new_AR)
+	bool changeShapeToAR(double new_AR)
 	{
 //cout << "changeShapeToAR()\n";
+//		bool change_made = false;
+		map<string, int> FP_copy = map<string, int>(FP);
 		target_AR = new_AR;
 
 //cout << "target_time: " << target_time << endl;
@@ -298,6 +353,8 @@ public:
 		if(getAR() < getTargetAR())
 			AR_less_than_target = true;
 
+		int attempt_count = 0;
+		int MAX_ATTEMPTS = 100;
 		while(1)
 		{
 //			cout <<"BEFORE MOVE: Target AR: "<<getTargetAR()<<" Actual AR: " << getAR() << endl;
@@ -312,43 +369,92 @@ public:
 				if(getAR() <= getTargetAR())
 					break;
 			}
-			if(getTime() < target_time)
+
+			if(getTime() < target_time && !heightIsSmallAsPossible())
 			{
 				if(!decreaseSize())
 					break;
 			}
-			else if(!increaseSize())
+			else
 			{
-				break;
+				if(!increaseSize())
+					break;
 			}
-
 		
 			computePerformance();
+			if(attempt_count++ > MAX_ATTEMPTS)
+			{
+				cerr << "MAX_ATTEMPTS reached while moving to new AR\n";
+				break;
+			}
 		}
 		computePerformance();
 		//try to get back to the original area
+		attempt_count = 0;
 		while(getTime() < target_time) 
 		{
 			//if(!decreaseSize())
 			//	break;
 			decreaseSize();
 			computePerformance();
+			if(attempt_count++ > MAX_ATTEMPTS)
+			{
+				cerr << "MAX_ATTEMPTS reached while decreasing to target_time\n";
+				break;
+			}
 		}
+
+		attempt_count = 0;
 		while(getTime() > target_time) 
 		{
 		//	if(!increaseSize())
 		//		break;
 			increaseSize();
 			computePerformance();
+			if(attempt_count++ > MAX_ATTEMPTS)
+			{
+				cerr << "MAX_ATTEMPTS reached while increasing to target_time\n";
+				break;
+			}
 		}
 
+		attempt_count = 0;
+		int failed_attempts = 0;
 		//ensure that the memory constraint is still met
 		while( getMemory() > MAX_ALLOWED_MEMORY)
 		{
 			if(!increaseSize())
+				failed_attempts++;
+			else failed_attempts = 0;
+
+			if(failed_attempts > 100)
+			{
+				cout << "CAN'T INCREASE SIZE...ATTEMPT FAILED." << endl;
 				break;
+			}
 			computePerformance();
+			if(attempt_count++ > MAX_ATTEMPTS)
+			{
+				cerr << "MAX_ATTEMPTS reached while increasing to meet memory contraint\n";
+				exit(2);
+			}
 		}
+
+		//if a change was made, return true
+		map<string,int>::iterator it1 = FP.begin();
+		map<string,int>::iterator it2 = FP_copy.begin();
+
+		while(it1 != FP.end() && it2 != FP_copy.end())
+		{
+			if(it1->second != it2->second)
+			{
+				cout << "changeShapeToAR() no change was found!\n";
+				return false;
+			}
+			it1++;
+			it2++;
+		}
+		return true;
 
 	}
 
@@ -372,11 +478,24 @@ public:
 	{
 		return false;
 	}
-	//
+
+	virtual void undoEPChange()
+	{
+		cout << "undoEPChange(" << last_changed_EP << ", " << !prev_was_increase << ")\n";
+		setEPtoNextValue(last_changed_EP, !prev_was_increase);
+	}
+
+	bool heightIsSmallAsPossible()
+	{
+//		cout << "heightIsSmallAsPossible(): " << (getEP("c") == 1 && getEP("w") == 1 && getEP("h") == 1)<< " c=" << getEP("c") << " h=" << getEP("h") <<" w=" << getEP("w") <<endl;
+		return (getEP("c") == 1 && getEP("w") == 1 && getEP("h") == 1);
+	}
+	
 	//increase the size of the kernel based on the target AR
 	//returns true if an increase was made
 	virtual bool increaseSize()
 	{
+//		cout << "increaseSize()\n";
 		//don't increase an EP beyond the FP!!! it gains no time because ceil()
 		if(getAR() < getTargetAR())
 		{
@@ -404,6 +523,9 @@ public:
 	//returns true if an decrease was made
 	virtual bool decreaseSize()
 	{
+		if(heightIsSmallAsPossible())
+			return increaseSize();
+
 		if(getAR() > getTargetAR())
 		{
 			if(changeHeight(false))

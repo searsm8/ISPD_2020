@@ -229,12 +229,11 @@ public:
 
 
 	
-		steps_per_temp = max(50000, (int)(pow(blocks.size(), 1.)*10));
+		steps_per_temp = max(20000, (int)(pow(blocks.size(), 1.0)*10));
 
 		printf("Initializing temp...(%d random moves)\n", 2*num_initialize_moves);
 		vector <double> deltas;
 		float new_cost, delta;
-			
 			
 		//perform random cell swaps and record deltas	
 		for(int i = 0; i < num_initialize_moves; i++)
@@ -260,7 +259,7 @@ public:
 
 		double std_dev = StandardDeviation(deltas);
 			
-		temp = .6*std_dev; //for a temperature of 30*std_dev,
+		temp = .4*std_dev; //for a temperature of 30*std_dev,
 				//there will be a 90% chance to accept a very bad change of 3*std_dev
 		start_temp = temp;
 		cout << "\n\n************************\n";
@@ -903,13 +902,44 @@ cout << "Total cost: " << cost << " (Prev Cost: " << prev_cost << ")" <<  endl;
 			cout << "Layout not legal! " << i  << endl;
 			
 			Block* b = getShortestBlock();
-
 			b->decreaseSize();
-
+			b->setPossibleKernels();
 			layout = findBestLayout();
 		}
 
 		return false;
+	}
+
+	//slowly increase block sizes to fully fill in the WSE
+	void finalizeLayout()
+	{
+		cout << "\n***finalizeLayout()***\n";
+		int attempts = 0;
+		int MAX_ATTEMPTS = 100000;
+
+		Block* b;
+		while(layout->isLegal(true))
+		{
+			cout << "layout is legal!\n";
+			b = getLongestBlock();
+			b->increaseSize();
+			b->setPossibleKernels();
+			layout = findBestLayout();
+			cout << "increased block " << b->getName() << endl;
+
+			if(attempts++ >= MAX_ATTEMPTS)
+			{
+				cout << "MAX_ATTEMPTS reached!\n";
+				break;
+			}
+		}
+
+		cout << "Done increasing...\n";
+
+		//after the change that made the layout illegal, undo that move
+//		b->undoEPChange();
+//		layout = findBestLayout();
+		
 	}
 
 	//attempt to reduce wirelength by making "obvious" adjustments to blocks
