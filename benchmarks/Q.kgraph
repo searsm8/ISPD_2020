@@ -1,0 +1,48 @@
+(*
+test=resnet50-lean-totem-balanced
+width=633
+height=633
+wdeltat=1
+wlength=40
+wadapter=400
+memlimit=24576
+*)
+
+(* Node Definitions *)
+input[0] n=[112 112 8] name='k0'
+cblock[1] f=128 h=14 w=14 name='k1'
+cblock[2] f=64 h=28 w=28 name='k2'
+cblock[3] f=32 h=56 w=56 name='k3'
+cblock[4] f=16 h=112 w=112 name='k4'
+dblock[5] f=128 h=7 w=7 name='k5'
+dblock[6] f=128 h=7 w=7 name='k6'
+dblock[7] f=64 h=14 w=14 name='k7'
+dblock[8] f=64 h=14 w=14 name='k8'
+dblock[9] f=64 h=14 w=14 name='k9'
+dblock[10] f=64 h=14 w=14 name='k10'
+dblock[11] f=64 h=14 w=14 name='k11'
+dblock[12] f=32 h=28 w=28 name='k12'
+dblock[13] f=32 h=28 w=28 name='k13'
+dblock[14] f=32 h=28 w=28 name='k14'
+dblock[15] f=16 h=56 w=56 name='k15'
+dblock[16] f=16 h=56 w=56 name='k16'
+output[17] n=[7 7 128] name='k17'
+
+(* Connectivity *)
+input[0]:_    -> cblock[4]:x, shape:[112][112][8]
+cblock[1]:y    -> dblock[6]:x, shape:[7][7][128]
+cblock[2]:y    -> dblock[11]:x, shape:[14][14][64]
+cblock[3]:y    -> dblock[14]:x, shape:[28][28][32]
+cblock[4]:y    -> dblock[16]:x, shape:[56][56][16]
+dblock[5]:y    -> output[17]:_, shape:[7][7][128]
+dblock[6]:y    -> dblock[5]:x, shape:[7][7][128]
+dblock[7]:y    -> cblock[1]:x, shape:[14][14][64]
+dblock[8]:y    -> dblock[7]:x, shape:[14][14][64]
+dblock[9]:y    -> dblock[8]:x, shape:[14][14][64]
+dblock[10]:y    -> dblock[9]:x, shape:[14][14][64]
+dblock[11]:y    -> dblock[10]:x, shape:[14][14][64]
+dblock[12]:y    -> cblock[2]:x, shape:[28][28][32]
+dblock[13]:y    -> dblock[12]:x, shape:[28][28][32]
+dblock[14]:y    -> dblock[13]:x, shape:[28][28][32]
+dblock[15]:y    -> cblock[3]:x, shape:[56][56][16]
+dblock[16]:y    -> dblock[15]:x, shape:[56][56][16]

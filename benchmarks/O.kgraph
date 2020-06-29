@@ -1,0 +1,66 @@
+(*
+test=resnet75-totem-balanced
+width=633
+height=633
+wdeltat=1
+wlength=40
+wadapter=400
+memlimit=24576
+*)
+
+(* Node Definitions *)
+input[0] n=[112 112 128] name='k0'
+cblock[1] f=2048 h=14 w=14 name='k1'
+cblock[2] f=1024 h=28 w=28 name='k2'
+cblock[3] f=512 h=56 w=56 name='k3'
+cblock[4] f=256 h=56 w=56 name='k4'
+dblock[5] f=2048 h=7 w=7 name='k5'
+dblock[6] f=2048 h=7 w=7 name='k6'
+dblock[7] f=2048 h=7 w=7 name='k7'
+dblock[8] f=2048 h=7 w=7 name='k8'
+dblock[9] f=1024 h=14 w=14 name='k9'
+dblock[10] f=1024 h=14 w=14 name='k10'
+dblock[11] f=1024 h=14 w=14 name='k11'
+dblock[12] f=1024 h=14 w=14 name='k12'
+dblock[13] f=1024 h=14 w=14 name='k13'
+dblock[14] f=1024 h=14 w=14 name='k14'
+dblock[15] f=1024 h=14 w=14 name='k15'
+dblock[16] f=1024 h=14 w=14 name='k16'
+dblock[17] f=512 h=28 w=28 name='k17'
+dblock[18] f=512 h=28 w=28 name='k18'
+dblock[19] f=512 h=28 w=28 name='k19'
+dblock[20] f=512 h=28 w=28 name='k20'
+dblock[21] f=512 h=28 w=28 name='k21'
+dblock[22] f=256 h=56 w=56 name='k22'
+dblock[23] f=256 h=56 w=56 name='k23'
+dblock[24] f=256 h=56 w=56 name='k24'
+dblock[25] f=256 h=56 w=56 name='k25'
+output[26] n=[7 7 2048] name='k26'
+
+(* Connectivity *)
+input[0]:_ ->  cblock[4]:x, shape:[112][112][128]
+cblock[1]:y ->  dblock[8]:x, shape:[7][7][2048]
+cblock[2]:y ->  dblock[16]:x, shape:[14][14][1024]
+cblock[3]:y ->  dblock[21]:x, shape:[28][28][512]
+cblock[4]:y ->  dblock[25]:x, shape:[56][56][256]
+dblock[5]:y ->  output[26]:_, shape:[7][7][2048]
+dblock[6]:y ->  dblock[5]:x, shape:[7][7][2048]
+dblock[7]:y ->  dblock[6]:x, shape:[7][7][2048]
+dblock[8]:y ->  dblock[7]:x, shape:[7][7][2048]
+dblock[9]:y ->  cblock[1]:x, shape:[14][14][1024]
+dblock[10]:y ->  dblock[9]:x, shape:[14][14][1024]
+dblock[11]:y ->  dblock[10]:x, shape:[14][14][1024]
+dblock[12]:y ->  dblock[11]:x, shape:[14][14][1024]
+dblock[13]:y ->  dblock[12]:x, shape:[14][14][1024]
+dblock[14]:y ->  dblock[13]:x, shape:[14][14][1024]
+dblock[15]:y ->  dblock[14]:x, shape:[14][14][1024]
+dblock[16]:y ->  dblock[15]:x, shape:[14][14][1024]
+dblock[17]:y ->  cblock[2]:x, shape:[28][28][512]
+dblock[18]:y ->  dblock[17]:x, shape:[28][28][512]
+dblock[19]:y ->  dblock[18]:x, shape:[28][28][512]
+dblock[20]:y ->  dblock[19]:x, shape:[28][28][512]
+dblock[21]:y ->  dblock[20]:x, shape:[28][28][512]
+dblock[22]:y ->  cblock[3]:x, shape:[56][56][256]
+dblock[23]:y ->  dblock[22]:x, shape:[56][56][256]
+dblock[24]:y ->  dblock[23]:x, shape:[56][56][256]
+dblock[25]:y ->  dblock[24]:x, shape:[56][56][256]

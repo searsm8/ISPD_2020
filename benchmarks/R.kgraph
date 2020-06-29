@@ -1,0 +1,136 @@
+(*
+test=resnet50-lean-conv-balanced
+width=633
+height=633
+wdeltat=1
+wlength=40
+wadapter=400
+memlimit=24576
+*)
+
+(* Node Definitions *)
+input[0] n=[ 112 112 8 ] name='k0'
+conv[1] W=14 H=14 R=1 S=1 C=64 K=32 T=1 U=1 name='k1'
+conv[2] W=14 H=14 R=3 S=3 C=32 K=32 T=2 U=2 name='k2'
+conv[3] W=7 H=7 R=1 S=1 C=32 K=128 T=1 U=1 name='k3'
+conv[4] W=14 H=14 R=1 S=1 C=64 K=128 T=2 U=2 name='k4'
+conv[5] W=28 H=28 R=1 S=1 C=32 K=16 T=1 U=1 name='k5'
+conv[6] W=28 H=28 R=3 S=3 C=16 K=16 T=2 U=2 name='k6'
+conv[7] W=14 H=14 R=1 S=1 C=16 K=64 T=1 U=1 name='k7'
+conv[8] W=28 H=28 R=1 S=1 C=32 K=64 T=2 U=2 name='k8'
+conv[9] W=56 H=56 R=1 S=1 C=16 K=8 T=1 U=1 name='k9'
+conv[10] W=56 H=56 R=3 S=3 C=8 K=8 T=2 U=2 name='k10'
+conv[11] W=28 H=28 R=1 S=1 C=8 K=32 T=1 U=1 name='k11'
+conv[12] W=56 H=56 R=1 S=1 C=16 K=32 T=2 U=2 name='k12'
+conv[13] W=112 H=112 R=1 S=1 C=8 K=4 T=1 U=1 name='k13'
+conv[14] W=112 H=112 R=3 S=3 C=4 K=4 T=2 U=2 name='k14'
+conv[15] W=56 H=56 R=1 S=1 C=4 K=16 T=1 U=1 name='k15'
+conv[16] W=112 H=112 R=1 S=1 C=8 K=16 T=2 U=2 name='k16'
+conv[17] W=7 H=7 R=1 S=1 C=128 K=32 T=1 U=1 name='k17'
+conv[18] W=7 H=7 R=3 S=3 C=32 K=32 T=1 U=1 name='k18'
+conv[19] W=7 H=7 R=1 S=1 C=32 K=128 T=1 U=1 name='k19'
+conv[20] W=7 H=7 R=1 S=1 C=128 K=32 T=1 U=1 name='k20'
+conv[21] W=7 H=7 R=3 S=3 C=32 K=32 T=1 U=1 name='k21'
+conv[22] W=7 H=7 R=1 S=1 C=32 K=128 T=1 U=1 name='k22'
+conv[23] W=14 H=14 R=1 S=1 C=64 K=16 T=1 U=1 name='k23'
+conv[24] W=14 H=14 R=3 S=3 C=16 K=16 T=1 U=1 name='k24'
+conv[25] W=14 H=14 R=1 S=1 C=16 K=64 T=1 U=1 name='k25'
+conv[26] W=14 H=14 R=1 S=1 C=64 K=16 T=1 U=1 name='k26'
+conv[27] W=14 H=14 R=3 S=3 C=16 K=16 T=1 U=1 name='k27'
+conv[28] W=14 H=14 R=1 S=1 C=16 K=64 T=1 U=1 name='k28'
+conv[29] W=14 H=14 R=1 S=1 C=64 K=16 T=1 U=1 name='k29'
+conv[30] W=14 H=14 R=3 S=3 C=16 K=16 T=1 U=1 name='k30'
+conv[31] W=14 H=14 R=1 S=1 C=16 K=64 T=1 U=1 name='k31'
+conv[32] W=14 H=14 R=1 S=1 C=64 K=16 T=1 U=1 name='k32'
+conv[33] W=14 H=14 R=3 S=3 C=16 K=16 T=1 U=1 name='k33'
+conv[34] W=14 H=14 R=1 S=1 C=16 K=64 T=1 U=1 name='k34'
+conv[35] W=14 H=14 R=1 S=1 C=64 K=16 T=1 U=1 name='k35'
+conv[36] W=14 H=14 R=3 S=3 C=16 K=16 T=1 U=1 name='k36'
+conv[37] W=14 H=14 R=1 S=1 C=16 K=64 T=1 U=1 name='k37'
+conv[38] W=28 H=28 R=1 S=1 C=32 K=8 T=1 U=1 name='k38'
+conv[39] W=28 H=28 R=3 S=3 C=8 K=8 T=1 U=1 name='k39'
+conv[40] W=28 H=28 R=1 S=1 C=8 K=32 T=1 U=1 name='k40'
+conv[41] W=28 H=28 R=1 S=1 C=32 K=8 T=1 U=1 name='k41'
+conv[42] W=28 H=28 R=3 S=3 C=8 K=8 T=1 U=1 name='k42'
+conv[43] W=28 H=28 R=1 S=1 C=8 K=32 T=1 U=1 name='k43'
+conv[44] W=28 H=28 R=1 S=1 C=32 K=8 T=1 U=1 name='k44'
+conv[45] W=28 H=28 R=3 S=3 C=8 K=8 T=1 U=1 name='k45'
+conv[46] W=28 H=28 R=1 S=1 C=8 K=32 T=1 U=1 name='k46'
+conv[47] W=56 H=56 R=1 S=1 C=16 K=4 T=1 U=1 name='k47'
+conv[48] W=56 H=56 R=3 S=3 C=4 K=4 T=1 U=1 name='k48'
+conv[49] W=56 H=56 R=1 S=1 C=4 K=16 T=1 U=1 name='k49'
+conv[50] W=56 H=56 R=1 S=1 C=16 K=4 T=1 U=1 name='k50'
+conv[51] W=56 H=56 R=3 S=3 C=4 K=4 T=1 U=1 name='k51'
+conv[52] W=56 H=56 R=1 S=1 C=4 K=16 T=1 U=1 name='k52'
+output[53] n=[ 7 7 128 ] name='k53'
+
+(* Connectivity *)
+conv[1]:y	->	conv[2]:x, shape:[14][14][32]
+conv[2]:y	->	conv[3]:x, shape:[14][14][32]
+conv[1]:y	->	conv[4]:x, shape:[14][14][32]
+conv[4]:y	->	conv[3]:x, shape:[14][14][128]
+conv[5]:y	->	conv[6]:x, shape:[28][28][16]
+conv[6]:y	->	conv[7]:x, shape:[28][28][16]
+conv[5]:y	->	conv[8]:x, shape:[28][28][16]
+conv[8]:y	->	conv[7]:x, shape:[28][28][64]
+conv[9]:y	->	conv[10]:x, shape:[56][56][8]
+conv[10]:y	->	conv[11]:x, shape:[56][56][8]
+conv[9]:y	->	conv[12]:x, shape:[56][56][8]
+conv[12]:y	->	conv[11]:x, shape:[56][56][32]
+conv[13]:y	->	conv[14]:x, shape:[112][112][4]
+conv[14]:y	->	conv[15]:x, shape:[112][112][4]
+conv[13]:y	->	conv[16]:x, shape:[112][112][4]
+conv[16]:y	->	conv[15]:x, shape:[112][112][16]
+conv[17]:y	->	conv[18]:x, shape:[7][7][32]
+conv[18]:y	->	conv[19]:x, shape:[7][7][32]
+conv[17]:y	->	conv[19]:x, shape:[7][7][128]
+conv[20]:y	->	conv[21]:x, shape:[7][7][32]
+conv[21]:y	->	conv[22]:x, shape:[7][7][32]
+conv[20]:y	->	conv[22]:x, shape:[7][7][128]
+conv[23]:y	->	conv[24]:x, shape:[14][14][16]
+conv[24]:y	->	conv[25]:x, shape:[14][14][16]
+conv[23]:y	->	conv[25]:x, shape:[14][14][64]
+conv[26]:y	->	conv[27]:x, shape:[14][14][16]
+conv[27]:y	->	conv[28]:x, shape:[14][14][16]
+conv[26]:y	->	conv[28]:x, shape:[14][14][64]
+conv[29]:y	->	conv[30]:x, shape:[14][14][16]
+conv[30]:y	->	conv[31]:x, shape:[14][14][16]
+conv[29]:y	->	conv[31]:x, shape:[14][14][64]
+conv[32]:y	->	conv[33]:x, shape:[14][14][16]
+conv[33]:y	->	conv[34]:x, shape:[14][14][16]
+conv[32]:y	->	conv[34]:x, shape:[14][14][64]
+conv[35]:y	->	conv[36]:x, shape:[14][14][16]
+conv[36]:y	->	conv[37]:x, shape:[14][14][16]
+conv[35]:y	->	conv[37]:x, shape:[14][14][64]
+conv[38]:y	->	conv[39]:x, shape:[28][28][8]
+conv[39]:y	->	conv[40]:x, shape:[28][28][8]
+conv[38]:y	->	conv[40]:x, shape:[28][28][32]
+conv[41]:y	->	conv[42]:x, shape:[28][28][8]
+conv[42]:y	->	conv[43]:x, shape:[28][28][8]
+conv[41]:y	->	conv[43]:x, shape:[28][28][32]
+conv[44]:y	->	conv[45]:x, shape:[28][28][8]
+conv[45]:y	->	conv[46]:x, shape:[28][28][8]
+conv[44]:y	->	conv[46]:x, shape:[28][28][32]
+conv[47]:y	->	conv[48]:x, shape:[56][56][4]
+conv[48]:y	->	conv[49]:x, shape:[56][56][4]
+conv[47]:y	->	conv[49]:x, shape:[56][56][16]
+conv[50]:y	->	conv[51]:x, shape:[56][56][4]
+conv[51]:y	->	conv[52]:x, shape:[56][56][4]
+conv[50]:y	->	conv[52]:x, shape:[56][56][16]
+input[0]:_	->	conv[13]:x, shape:[112][112][8]
+conv[3]:y	->	conv[20]:x, shape:[7][7][128]
+conv[7]:y	->	conv[35]:x, shape:[14][14][64]
+conv[11]:y	->	conv[44]:x, shape:[28][28][32]
+conv[15]:y	->	conv[50]:x, shape:[56][56][16]
+conv[19]:y	->	output[53]:_, shape:[7][7][128]
+conv[22]:y	->	conv[17]:x, shape:[7][7][128]
+conv[25]:y	->	conv[1]:x, shape:[14][14][64]
+conv[28]:y	->	conv[23]:x, shape:[14][14][64]
+conv[31]:y	->	conv[26]:x, shape:[14][14][64]
+conv[34]:y	->	conv[29]:x, shape:[14][14][64]
+conv[37]:y	->	conv[32]:x, shape:[14][14][64]
+conv[40]:y	->	conv[5]:x, shape:[28][28][32]
+conv[43]:y	->	conv[38]:x, shape:[28][28][32]
+conv[46]:y	->	conv[41]:x, shape:[28][28][32]
+conv[49]:y	->	conv[9]:x, shape:[56][56][16]
+conv[52]:y	->	conv[47]:x, shape:[56][56][16]
